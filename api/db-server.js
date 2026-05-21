@@ -7,8 +7,8 @@
  *   SUPABASE_ANON_KEY = your-anon-key
  */
  
-const SUPABASE_URL      = process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const SUPABASE_URL      = process.env.SUPABASE_URL      || 'https://nzoenhkvkaysqqfvkoer.supabase.co';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56b2VuaGt2a2F5c3FxZnZrb2VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMzg5NjYsImV4cCI6MjA5NDkxNDk2Nn0.E5lnE20QPARVAFB3z-iTD4RuiXnX7F00aZ_bdWfV0gY';
  
 // ─── Supabase REST helper ─────────────────────────────────────────────────────
 async function sb(method, table, { filter = '', body, single = false } = {}) {
