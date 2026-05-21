@@ -117,7 +117,7 @@
 <body>
 <div id="cursor-dot"></div>
 <div id="cursor-ring"></div>
-
+ 
 <header id="site-header">
   <a href="#home" class="logo">Auth.cs</a>
   <nav>
@@ -127,7 +127,7 @@
     <a href="#contact">Contact</a>
   </nav>
 </header>
-
+ 
 <section class="home" id="home">
   <div class="home-img"><img src="main.jpg" alt="Auth.cs"></div>
   <div class="home-content">
@@ -143,15 +143,17 @@
       <div class="stat-divider"></div>
       <div class="stat-item"><span class="num">24/7</span><span class="label">Uptime</span></div>
     </div>
+    <!-- FIX: All 4 social icons present -->
     <div class="social-icons">
       <a href="https://discord.gg/RUeV9g55zU" target="_blank"><i class="fa-brands fa-discord"></i></a>
       <a href="#"><i class="fa-brands fa-instagram"></i></a>
       <a href="#"><i class="fa-brands fa-github"></i></a>
       <a href="#"><i class="fa-brands fa-x-twitter"></i></a>
     </div>
+    <!-- FIX: Both buttons always go to login.html -->
     <div class="btn-group">
-      <a href="login.html" id="btn-get-started" class="btn btn-primary">Get Started</a>
-      <a href="login.html" id="btn-dashboard"   class="btn btn-secondary">View Dashboard</a>
+      <a href="login.html" class="btn btn-primary">Get Started</a>
+      <a href="login.html" class="btn btn-secondary">View Dashboard</a>
     </div>
   </div>
   <div class="features-strip">
@@ -163,9 +165,9 @@
   </div>
   <div class="scroll-hint"><div class="line"></div><span>scroll</span></div>
 </section>
-
+ 
 <div class="sep"></div>
-
+ 
 <section class="page-section" id="features">
   <div class="section-tag">What We Offer</div>
   <h2 class="section-title">Powerful <span>Features</span></h2>
@@ -179,9 +181,9 @@
     <div class="feat-card"><div class="feat-icon"><i class="fa-solid fa-ban"></i></div><h3>Ban System</h3><p>Instantly revoke access to banned users with a single click.</p></div>
   </div>
 </section>
-
+ 
 <div class="sep"></div>
-
+ 
 <section class="page-section" id="pricing">
   <div class="section-tag">Plans</div>
   <h2 class="section-title">Auth.cs <span>Pricing</span></h2>
@@ -192,9 +194,9 @@
     <div class="price-card"><div class="plan-name">Enterprise</div><div class="plan-price"><sup>$</sup>29</div><div class="plan-period">per month</div><ul class="plan-features"><li><i class="fa-solid fa-check"></i>Unlimited licenses</li><li><i class="fa-solid fa-check"></i>Advanced key generation</li><li><i class="fa-solid fa-check"></i>HWID binding</li><li><i class="fa-solid fa-check"></i>Full REST API + analytics</li><li><i class="fa-solid fa-check"></i>Priority support</li><li><i class="fa-solid fa-check"></i>Custom domains</li></ul><a href="https://discord.gg/RUeV9g55zU" target="_blank" class="plan-btn">Contact Us</a></div>
   </div>
 </section>
-
+ 
 <div class="sep"></div>
-
+ 
 <section class="page-section" id="contact">
   <div class="section-tag">Get In Touch</div>
   <h2 class="section-title">Join Our <span>Community</span></h2>
@@ -213,35 +215,20 @@
     </div></div>
   </div>
 </section>
-
+ 
+<!-- FIX: Footer now has all 4 social icons -->
 <footer>
   <a href="#home" class="logo">Auth.cs</a>
   <p>© 2026 Auth.cs. All rights reserved.</p>
   <div class="social-icons" style="margin:0">
     <a href="https://discord.gg/RUeV9g55zU" target="_blank"><i class="fa-brands fa-discord"></i></a>
+    <a href="#"><i class="fa-brands fa-instagram"></i></a>
     <a href="#"><i class="fa-brands fa-github"></i></a>
+    <a href="#"><i class="fa-brands fa-x-twitter"></i></a>
   </div>
 </footer>
-
+ 
 <script>
-  // ── Session-aware buttons: go dashboard if logged in, else login ──
-  (function(){
-    try {
-      const s = localStorage.getItem('authcs_session');
-      if(s){
-        const d = JSON.parse(s);
-        if(d.expiry && Date.now() < d.expiry){
-          document.getElementById('btn-get-started').href = 'dashboard.html';
-          document.getElementById('btn-dashboard').href   = 'dashboard.html';
-          return;
-        }
-        localStorage.removeItem('authcs_session');
-      }
-    } catch(e){}
-    document.getElementById('btn-get-started').href = 'login.html';
-    document.getElementById('btn-dashboard').href   = 'login.html';
-  })();
-
   // ── Cursor ──
   const dot=document.getElementById('cursor-dot'),ring=document.getElementById('cursor-ring');
   let mx=-200,my=-200,rx=-200,ry=-200;
@@ -251,11 +238,11 @@
     el.addEventListener('mouseenter',()=>{dot.classList.add('hovered');ring.classList.add('hovered');});
     el.addEventListener('mouseleave',()=>{dot.classList.remove('hovered');ring.classList.remove('hovered');});
   });
-
+ 
   // ── Sticky header ──
   const hdr=document.getElementById('site-header');
   window.addEventListener('scroll',()=>{hdr.classList.toggle('scrolled',window.scrollY>80);},{passive:true});
-
+ 
   // ── Typing animation ──
   const words=['Licensing','Key Generation','User Auth','HWID Locks','App Security'];
   let wi=0,ci=0,del=false;
@@ -267,7 +254,7 @@
     setTimeout(type,del?60:100);
   }
   type();
-
+ 
   // ── Nav active on scroll ──
   const secs=document.querySelectorAll('section[id]');
   const navs=document.querySelectorAll('nav a');
