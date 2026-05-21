@@ -260,6 +260,25 @@ const AuthDB = (() => {
     },
  
     /**
+     * Toggle 2FA requirement for a subseller or reseller.
+     */
+    async set2FAEnabled(username, enabled, changedBy) {
+      const record = await this.getByUsername(username);
+      if (!record) throw new Error(`Account "${username}" not found.`);
+      record.totp2faEnabled = !!enabled;
+      record.updatedAt      = Date.now();
+      await _put(STORE.ACCOUNTS, record);
+
+      await audit.log({
+        actor  : (changedBy || '').toLowerCase(),
+        target : username.toLowerCase(),
+        action : enabled ? '2fa_enabled' : '2fa_disabled',
+        detail : `2FA ${enabled ? 'enabled' : 'disabled'} for ${username}`,
+      });
+      return record;
+    },
+
+    /**
      * Delete an account and its API key.
      */
     async remove(username, deletedBy) {
