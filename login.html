@@ -70,8 +70,6 @@
     .card-footer a{color:var(--red);text-decoration:none;font-weight:600}
     .screen{display:none;width:100%;max-width:440px}
     .screen.active{display:block;animation:fadeUp .4s ease both}
- 
-    /* ── 2FA VERIFY ── */
     .verify-icon{width:72px;height:72px;border-radius:50%;background:rgba(232,0,30,0.1);border:2px solid rgba(232,0,30,0.3);display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:var(--red);margin:0 auto 1.2rem;box-shadow:0 0 30px rgba(232,0,30,0.15)}
     .totp-timer-wrap{display:flex;align-items:center;justify-content:center;gap:.6rem;margin-bottom:1rem;font-size:.78rem;color:var(--muted)}
     .totp-timer-wrap svg{transform:rotate(-90deg)}
@@ -81,8 +79,6 @@
     .otp-box{width:52px;height:60px;text-align:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:var(--text);font-family:'Poppins',sans-serif;font-size:1.4rem;font-weight:700;outline:none;transition:border-color .2s;user-select:text}
     .otp-box:focus{border-color:rgba(232,0,30,0.5);background:rgba(232,0,30,0.05)}
     .otp-box.filled{border-color:rgba(232,0,30,0.35)}
- 
-    /* ── 2FA SETUP ── */
     .setup-step{display:none}
     .setup-step.active{display:block;animation:fadeUp .3s ease both}
     .qr-wrap{display:flex;flex-direction:column;align-items:center;gap:1rem;margin:1.2rem 0}
@@ -96,7 +92,6 @@
     .step-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.15);transition:background .3s,transform .3s}
     .step-dot.active{background:var(--red);transform:scale(1.3)}
     .step-dot.done{background:rgba(35,165,89,0.7)}
- 
     @media(max-width:500px){.card{padding:1.6rem 1.2rem}.otp-box{width:42px;height:52px;font-size:1.2rem}}
   </style>
 </head>
@@ -104,14 +99,14 @@
 <div id="cursor-dot"></div>
 <div id="cursor-ring"></div>
 <div class="bg-glow"></div>
- 
+
 <header>
   <a href="index.html" class="logo">Auth.cs</a>
   <a href="index.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Home</a>
 </header>
- 
+
 <main>
- 
+
   <!-- ═══════════ LOGIN SCREEN ═══════════ -->
   <div class="screen active" id="screen-login">
     <div class="page-header">
@@ -160,7 +155,7 @@
     </div>
     <div class="card-footer">Need help? <a href="https://discord.gg/RUeV9g55zU" target="_blank">Join our Discord</a></div>
   </div>
- 
+
   <!-- ═══════════ 2FA SETUP SCREEN (first-time) ═══════════ -->
   <div class="screen" id="screen-2fa-setup">
     <div style="max-width:440px;width:100%">
@@ -175,8 +170,6 @@
           <div class="step-dot" id="sdot-2"></div>
           <div class="step-dot" id="sdot-3"></div>
         </div>
- 
-        <!-- Step 1: Show QR -->
         <div class="setup-step active" id="setup-step-1">
           <p class="setup-note">
             Open <strong style="color:var(--text)">Google Authenticator</strong> on your phone,<br>
@@ -196,8 +189,6 @@
             <i class="fa-solid fa-arrow-right"></i> I've scanned it
           </button>
         </div>
- 
-        <!-- Step 2: Verify code -->
         <div class="setup-step" id="setup-step-2">
           <p class="setup-note">
             Enter the <strong style="color:var(--text)">6-digit code</strong> from your authenticator app to confirm setup.
@@ -219,8 +210,6 @@
             <a href="#" onclick="backToQr(event)" style="color:var(--red);font-weight:600;text-decoration:none">← Back to QR code</a>
           </p>
         </div>
- 
-        <!-- Step 3: Done -->
         <div class="setup-step" id="setup-step-3">
           <div class="verify-icon" style="background:rgba(35,165,89,0.1);border-color:rgba(35,165,89,0.3);color:#4ade80;margin-bottom:1.2rem">
             <i class="fa-solid fa-check"></i>
@@ -228,14 +217,13 @@
           <p style="text-align:center;font-size:.88rem;font-weight:600;color:#4ade80;margin-bottom:.4rem">2FA Enabled!</p>
           <p style="text-align:center;font-size:.75rem;color:var(--muted)">Your account is now secured. Redirecting…</p>
         </div>
- 
         <p style="text-align:center;margin-top:1rem;font-size:.75rem;color:var(--muted)">
           <a href="#" onclick="backToLogin(event)" style="color:var(--red);font-weight:600;text-decoration:none">← Use a different account</a>
         </p>
       </div>
     </div>
   </div>
- 
+
   <!-- ═══════════ 2FA VERIFY SCREEN ═══════════ -->
   <div class="screen" id="screen-2fa">
     <div style="max-width:440px;width:100%">
@@ -273,21 +261,56 @@
       </div>
     </div>
   </div>
- 
+
 </main>
- 
+
 <script src="/db.js"></script>
-<!-- QR code library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 // ══════════════════════════════════════════════
+// ANTI-INSPECT
+// ══════════════════════════════════════════════
+(function(){
+  // Block right-click context menu
+  document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+
+  // Block common DevTools keyboard shortcuts
+  document.addEventListener('keydown', function(e){
+    // F12
+    if(e.key === 'F12') { e.preventDefault(); return false; }
+    // Ctrl+Shift+I / Cmd+Opt+I
+    if((e.ctrlKey||e.metaKey) && e.shiftKey && (e.key==='I'||e.key==='i')) { e.preventDefault(); return false; }
+    // Ctrl+Shift+J / Cmd+Opt+J
+    if((e.ctrlKey||e.metaKey) && e.shiftKey && (e.key==='J'||e.key==='j')) { e.preventDefault(); return false; }
+    // Ctrl+Shift+C / Cmd+Opt+C
+    if((e.ctrlKey||e.metaKey) && e.shiftKey && (e.key==='C'||e.key==='c')) { e.preventDefault(); return false; }
+    // Ctrl+U (view source)
+    if((e.ctrlKey||e.metaKey) && (e.key==='U'||e.key==='u')) { e.preventDefault(); return false; }
+    // Ctrl+S (save page)
+    if((e.ctrlKey||e.metaKey) && (e.key==='S'||e.key==='s')) { e.preventDefault(); return false; }
+  });
+
+  // Detect DevTools open via window size difference (desktop)
+  var threshold = 160;
+  setInterval(function(){
+    if(
+      window.outerWidth - window.innerWidth > threshold ||
+      window.outerHeight - window.innerHeight > threshold
+    ){
+      document.body.innerHTML = '';
+      window.location.reload();
+    }
+  }, 1000);
+})();
+
+// ══════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════
-let pendingUser   = null;   // account object after password check
+let pendingUser   = null;
 let timerIv       = null;
-let _setupSecret  = '';     // generated TOTP secret during setup flow
+let _setupSecret  = '';
 const OWNER       = 'INSANZO';
- 
+
 // ══════════════════════════════════════════════
 // UI HELPERS
 // ══════════════════════════════════════════════
@@ -315,7 +338,7 @@ function showOk(msg) {
   document.getElementById('login-ok').classList.add('show');
   document.getElementById('login-err').classList.remove('show');
 }
- 
+
 // ══════════════════════════════════════════════
 // OWNER DETECTION
 // ══════════════════════════════════════════════
@@ -343,7 +366,7 @@ function checkOwner() {
     document.getElementById('user-icon').style.color = '';
   }
 }
- 
+
 // ══════════════════════════════════════════════
 // LOGIN
 // ══════════════════════════════════════════════
@@ -360,26 +383,14 @@ async function doLogin() {
     const account = await AuthDB.accounts.verifyLogin(user, pass);
     if (!account) { showErr('Invalid username or password.'); setLoading(false); return; }
     if (account.enabled === false) { showErr('Your account has been disabled. Contact the owner.'); setLoading(false); return; }
- 
     pendingUser = account;
- 
-    // Check if 2FA is required for this account
     const needs2FA = account.twoFAEnabled !== false;
-    if (!needs2FA) {
-      // 2FA disabled by owner — log straight in
-      writeSessionAndGo(account);
-      return;
-    }
- 
-    // Get TOTP secret (DB first, localStorage fallback)
+    if (!needs2FA) { writeSessionAndGo(account); return; }
     const secret = await AuthDB.accounts.getTotpSecret(account.username);
- 
     if (!secret) {
-      // First login — need to set up 2FA
       showOk('Password correct! Setting up 2FA…');
       setTimeout(() => { setLoading(false); startSetup(account); }, 700);
     } else {
-      // Already has a secret — verify
       showOk('Login verified! Enter your 2FA code…');
       setTimeout(() => { setLoading(false); start2FA(account, secret); }, 700);
     }
@@ -388,7 +399,7 @@ async function doLogin() {
     setLoading(false);
   }
 }
- 
+
 function writeSessionAndGo(account) {
   const session = { user: account.username, role: account.role, expiry: Date.now() + 30*60*1000 };
   localStorage.setItem('authcs_session', JSON.stringify(session));
@@ -396,7 +407,7 @@ function writeSessionAndGo(account) {
   setLoading(false);
   window.location.href = 'dashboard.html';
 }
- 
+
 // ══════════════════════════════════════════════
 // 2FA SETUP (first-time)
 // ══════════════════════════════════════════════
@@ -404,11 +415,7 @@ function startSetup(account) {
   pendingUser   = account;
   _setupSecret  = AuthDB.totp.generateSecret();
   const uri     = AuthDB.totp.otpauthUri(account.username, _setupSecret);
- 
-  // Set secret text
   document.getElementById('setup-secret-text').textContent = _setupSecret;
- 
-  // Build QR using qrcodejs
   const qrImg = document.getElementById('setup-qr-img');
   qrImg.style.display = 'none';
   const qrDiv = document.createElement('div');
@@ -422,18 +429,15 @@ function startSetup(account) {
       document.body.removeChild(qrDiv);
     }, 300);
   } catch(e) {
-    // Fallback: Google Chart API
     qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(uri);
     qrImg.style.display = '';
     document.body.removeChild(qrDiv);
   }
- 
-  // Reset steps
   setSetupStep(1);
   showScreen('screen-2fa-setup');
   initSetupOtpBoxes();
 }
- 
+
 function setSetupStep(n) {
   [1,2,3].forEach(i => {
     document.getElementById('setup-step-' + i).classList.toggle('active', i === n);
@@ -443,7 +447,6 @@ function setSetupStep(n) {
     if (i === n) dot.classList.add('active');
   });
 }
- 
 function goToVerifyStep() {
   setSetupStep(2);
   document.getElementById('setup-err').classList.remove('show');
@@ -451,13 +454,11 @@ function goToVerifyStep() {
   boxes.forEach(b => { b.value = ''; b.classList.remove('filled'); });
   boxes[0].focus();
 }
- 
 function backToQr(e) {
   e.preventDefault();
   document.getElementById('setup-err').classList.remove('show');
   setSetupStep(1);
 }
- 
 function copySecret() {
   navigator.clipboard.writeText(_setupSecret).then(() => {
     const btn = document.querySelector('.secret-copy-btn');
@@ -465,7 +466,6 @@ function copySecret() {
     setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-copy"></i>'; }, 1800);
   });
 }
- 
 function initSetupOtpBoxes() {
   const boxes = [...document.querySelectorAll('#setup-otp-row .otp-box')];
   boxes.forEach((b, i) => {
@@ -482,7 +482,6 @@ function initSetupOtpBoxes() {
     };
   });
 }
- 
 async function confirmSetup() {
   const code = [...document.querySelectorAll('#setup-otp-row .otp-box')].map(x=>x.value).join('');
   if (code.length !== 6) return;
@@ -491,10 +490,8 @@ async function confirmSetup() {
   const spin = document.getElementById('setup-verify-spin');
   btn.disabled = true; lbl.style.opacity = '0.5'; spin.style.display = 'block';
   document.getElementById('setup-err').classList.remove('show');
- 
   const expected = await AuthDB.totp.getCode(_setupSecret);
   if (code === expected) {
-    // Save secret to DB
     try { await AuthDB.accounts.setTotpSecret(pendingUser.username, _setupSecret); } catch(e) {}
     setSetupStep(3);
     setTimeout(() => writeSessionAndGo(pendingUser), 1800);
@@ -506,7 +503,7 @@ async function confirmSetup() {
     btn.disabled = false; lbl.style.opacity = '1'; spin.style.display = 'none';
   }
 }
- 
+
 // ══════════════════════════════════════════════
 // 2FA VERIFY
 // ══════════════════════════════════════════════
@@ -517,7 +514,6 @@ function start2FA(account, secret) {
   initOtpBoxes();
   showScreen('screen-2fa');
 }
- 
 function startTimer() {
   if (timerIv) clearInterval(timerIv);
   const circ = document.getElementById('timer-circle'), lbl = document.getElementById('timer-label');
@@ -530,7 +526,6 @@ function startTimer() {
   };
   tick(); timerIv = setInterval(tick, 1000);
 }
- 
 function initOtpBoxes() {
   const boxes = [...document.querySelectorAll('#otp-row .otp-box')];
   boxes.forEach((b, i) => {
@@ -549,13 +544,11 @@ function initOtpBoxes() {
   });
   boxes[0].focus();
 }
- 
 function getOtpValue() { return [...document.querySelectorAll('#otp-row .otp-box')].map(x=>x.value).join(''); }
 function clearOtp() {
   document.querySelectorAll('#otp-row .otp-box').forEach(b=>{ b.value=''; b.classList.remove('filled'); });
   document.querySelectorAll('#otp-row .otp-box')[0].focus();
 }
- 
 async function verifyTotp() {
   const code = getOtpValue();
   if (code.length !== 6) return;
@@ -576,7 +569,7 @@ async function verifyTotp() {
     document.getElementById('twofa-lbl').style.opacity = '1';
   }
 }
- 
+
 function backToLogin(e) {
   e.preventDefault();
   if (timerIv) clearInterval(timerIv);
@@ -585,7 +578,7 @@ function backToLogin(e) {
   document.getElementById('login-ok').classList.remove('show');
   showScreen('screen-login');
 }
- 
+
 // ══════════════════════════════════════════════
 // CURSOR
 // ══════════════════════════════════════════════
@@ -602,17 +595,16 @@ document.querySelectorAll('a,button,input').forEach(el => {
   el.addEventListener('mouseenter', () => { dot.classList.add('hovered'); ring.classList.add('hovered'); });
   el.addEventListener('mouseleave', () => { dot.classList.remove('hovered'); ring.classList.remove('hovered'); });
 });
- 
+
 // Enter key
 document.addEventListener('keydown', e => {
   if (e.key !== 'Enter') return;
   const s = document.querySelector('.screen.active').id;
   if (s === 'screen-login') doLogin();
 });
- 
+
 // Init DB on load
 (async () => { try { await AuthDB.init(); await AuthDB.seedOwner(); } catch(e) {} })();
 </script>
 </body>
 </html>
- 
