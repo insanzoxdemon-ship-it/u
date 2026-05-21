@@ -151,17 +151,17 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
- 
+
   const url    = req.url || '';
   const method = req.method;
   const body   = await parseBody(req);
- 
+
   // Vercel routes pass the full path in req.url e.g. /api/db-server/accounts/insanzo
   const rawPath = url.split('?')[0];
   const path    = ('/' + rawPath.replace(/^\/api\/db-server\/?/, '')).replace(/\/+/g, '/') || '/';
   const qs      = Object.fromEntries(new URL('http://x' + url).searchParams);
   console.log('PATH:', path);
- 
+
  
   try {
  
@@ -190,7 +190,7 @@ export default async function handler(req, res) {
       let check = null;
       try { check = await sb('GET', 'accounts', { filter: 'username=eq.' + encodeURIComponent((u.username||'').toLowerCase()), single: true }); } catch(e) { check = null; }
       if (check) return res.status(409).json({ error: 'Username already exists.' });
- 
+
       const hashed = await hashPass(u.password || '');
       const pkgs = Array.isArray(u.packages) ? u.packages : [];
       const rows = await sbUpsert('accounts', {
@@ -229,11 +229,14 @@ export default async function handler(req, res) {
     const accMatch = path.match(/^\/accounts\/([^/]+)$/);
     if (accMatch && method === 'GET') {
       const username = decodeURIComponent(accMatch[1]).toLowerCase();
-      const row = await sb('GET', 'accounts', {
-        filter: 'username=eq.' + encodeURIComponent(username),
-        single: true,
-      }).catch(() => null);
-      if (!row) return res.status(404).json({ error: 'Not found' });
+      let row = null;
+      try {
+        row = await sb('GET', 'accounts', {
+          filter: 'username=eq.' + encodeURIComponent(username),
+          single: true,
+        });
+      } catch(e) { row = null; }
+      if (!row) return res.status(200).json(null);
       return res.status(200).json(mapAccount(row));
     }
  
@@ -456,4 +459,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: e.message });
   }
 }
- 
