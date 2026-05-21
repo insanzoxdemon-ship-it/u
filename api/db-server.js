@@ -154,32 +154,12 @@ export default async function handler(req, res) {
   const method = req.method;
   const body   = await parseBody(req);
  
-  // DEBUG — log everything so we can see what Vercel actually sends
-  console.log('DEBUG req.url:', url);
-  console.log('DEBUG req.query:', JSON.stringify(req.query));
-  console.log('DEBUG req.headers host:', req.headers && req.headers.host);
+  // Vercel routes pass the full path in req.url e.g. /api/db-server/accounts/insanzo
+  const rawPath = url.split('?')[0];
+  const path    = ('/' + rawPath.replace(/^\/api\/db-server\/?/, '')).replace(/\/+/g, '/') || '/';
+  const qs      = Object.fromEntries(new URL('http://x' + url).searchParams);
+  console.log('PATH:', path);
  
-  // Try every possible way to get the sub-path
-  const qs = Object.fromEntries(new URL('http://x' + url).searchParams);
-  console.log('DEBUG qs:', JSON.stringify(qs));
-  console.log('DEBUG req.query.slug:', req.query && req.query.slug);
- 
-  let path = '/';
-  if (req.query && req.query.slug) {
-    const s = req.query.slug;
-    path = '/' + (Array.isArray(s) ? s.join('/') : s);
-  } else if (qs.slug) {
-    path = '/' + qs.slug;
-  } else if (req.query && req.query._path) {
-    path = '/' + req.query._path;
-  } else if (qs._path) {
-    path = '/' + qs._path;
-  } else {
-    const rawPath = url.split('?')[0];
-    path = ('/' + rawPath.replace(/^\/api\/db-server\/?/, '')).replace(/\/+/g, '/') || '/';
-  }
-  console.log('DEBUG final path:', path);
-  delete qs.slug; delete qs._path;
  
   try {
  
@@ -472,4 +452,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: e.message });
   }
 }
- 
