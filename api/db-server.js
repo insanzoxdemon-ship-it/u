@@ -147,23 +147,36 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
  
-  // On Vercel, req.url for a serverless function is always just the file's own path.
-  // The sub-path (e.g. /accounts/insanzo) comes via the query string key that
-  // matches the wildcard name in vercel.json — we named it "slug".
   const url    = req.url || '';
-  const qs     = Object.fromEntries(new URL('http://x' + url).searchParams);
+  const method = req.method;
+  const body   = await parseBody(req);
+ 
+  // DEBUG — log everything so we can see what Vercel actually sends
+  console.log('DEBUG req.url:', url);
+  console.log('DEBUG req.query:', JSON.stringify(req.query));
+  console.log('DEBUG req.headers host:', req.headers && req.headers.host);
+ 
+  // Try every possible way to get the sub-path
+  const qs = Object.fromEntries(new URL('http://x' + url).searchParams);
+  console.log('DEBUG qs:', JSON.stringify(qs));
+  console.log('DEBUG req.query.slug:', req.query && req.query.slug);
+ 
   let path = '/';
-  if (qs.slug) {
-    // From vercel.json rewrite: /api/db-server/:slug* -> ?slug=accounts/insanzo
-    path = '/' + (Array.isArray(qs.slug) ? qs.slug.join('/') : qs.slug);
-    delete qs.slug;
+  if (req.query && req.query.slug) {
+    const s = req.query.slug;
+    path = '/' + (Array.isArray(s) ? s.join('/') : s);
+  } else if (qs.slug) {
+    path = '/' + qs.slug;
+  } else if (req.query && req.query._path) {
+    path = '/' + req.query._path;
+  } else if (qs._path) {
+    path = '/' + qs._path;
   } else {
-    // Fallback: parse from the raw URL path
     const rawPath = url.split('?')[0];
     path = ('/' + rawPath.replace(/^\/api\/db-server\/?/, '')).replace(/\/+/g, '/') || '/';
   }
-  const method = req.method;
-  const body   = await parseBody(req);
+  console.log('DEBUG final path:', path);
+  delete qs.slug; delete qs._path;
  
   try {
  
