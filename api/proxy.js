@@ -68,7 +68,10 @@ export default async function handler(req, res) {
  
     try {
       const data = await sellerCall(appid, { type: 'adduser', user: username, pass: password, expiry: days, sub: 'default' });
-      if (data.success) return res.status(200).json({ success: true, message: 'User created.', username, package: slugRaw, expires: days === '-1' ? 'Lifetime' : `${days} days` });
+      if (data.success) {
+        const expiresLabel = (days === '-1' || days === '0') ? 'Lifetime' : `${days} days`;
+        return res.status(200).json({ success: true, message: 'User created.', username, package: slugRaw, expires: expiresLabel });
+      }
       return res.status(200).json({ success: false, message: data.message || 'Failed.' });
     } catch(e) { return res.status(502).json({ success: false, message: e.message }); }
   }
@@ -95,26 +98,31 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: false, message: 'User not found.' });
   }
  
-  // ── POST /api/proxy/user/{user}/ban ──
-  if (req.method === 'POST' && /\/user\/[^/]+\/ban$/.test(rawPath)) {
+  // ── GET /api/proxy/fetch-all-users ──
+  // Returns all users across ALL applications: aimkill, external, internal, streamer, uidbypass
+  if (req.method === 'GET' && /\/fetch-all-users/.test(rawPath)) {
     const reseller = validateApiKey(req.headers['x-api-key'] || '');
     if (!reseller) return res.status(401).json({ success: false, message: 'Invalid X-API-KEY.' });
-    const user = rawPath.match(/\/user\/([^/]+)\/ban$/)[1];
-    for (const appid of Object.keys(SELLER_KEYS)) {
-      try { const d = await sellerCall(appid, { type: 'banuser', user }); if (d.success) return res.status(200).json({ success: true, message: 'User banned.', username: user }); } catch {}
-    }
-    return res.status(200).json({ success: false, message: 'User not found or already banned.' });
-  }
  
-  // ── POST /api/proxy/user/{user}/unban ──
-  if (req.method === 'POST' && /\/user\/[^/]+\/unban$/.test(rawPath)) {
-    const reseller = validateApiKey(req.headers['x-api-key'] || '');
-    if (!reseller) return res.status(401).json({ success: false, message: 'Invalid X-API-KEY.' });
-    const user = rawPath.match(/\/user\/([^/]+)\/unban$/)[1];
-    for (const appid of Object.keys(SELLER_KEYS)) {
-      try { const d = await sellerCall(appid, { type: 'unbanuser', user }); if (d.success) return res.status(200).json({ success: true, message: 'User unbanned.', username: user }); } catch {}
+    const results = [];
+    for (const [appid, sellerKey] of Object.entries(SELLER_KEYS)) {
+      try {
+        const d = await sellerCall(appid, { type: 'fetchallusers' });
+        if (d.success && Array.isArray(d.users)) {
+          const slug = Object.entries(SLUG_MAP).find(([, v]) => v === appid)?.[0] || appid;
+          for (const u of d.users) {
+            const expiryTs = parseInt(u.expiry);
+            const isLifetime = !u.expiry || u.expiry === '0' || u.expiry === 0 || isNaN(expiryTs) || expiryTs <= 0;
+            results.push({
+              application: slug,
+              username: u.username || '—',
+              expiry: isLifetime ? 'Lifetime' : new Date(expiryTs * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            });
+          }
+        }
+      } catch {}
     }
-    return res.status(200).json({ success: false, message: 'User not found or already unbanned.' });
+    return res.status(200).json({ success: true, total: results.length, users: results });
   }
  
   // ── Internal dashboard calls (query params) ──
@@ -124,13 +132,11 @@ export default async function handler(req, res) {
   if (!SELLER_KEYS[appid]) return res.status(403).json({ success: false, message: 'Unknown appid.' });
  
   const type = params.type;
-  const allowed = ['fetchallusers', 'adduser', 'deluser', 'resetuser', 'ban', 'unban', 'banuser', 'unbanuser'];
+  const allowed = ['fetchallusers', 'adduser', 'deluser', 'resetuser'];
   if (!type || !allowed.includes(type)) return res.status(400).json({ success: false, message: 'Invalid type.' });
  
   const up = { type };
-  if (type === 'adduser')  { up.user = params.user||''; up.pass = params.pass||''; up.expiry = params.expiry||'30'; up.sub = params.sub||'default'; }
-  else if (type === 'ban') up.type = 'banuser';
-  else if (type === 'unban') up.type = 'unbanuser';
+  if (type === 'adduser') { up.user = params.user||''; up.pass = params.pass||''; up.expiry = params.expiry||'30'; up.sub = params.sub||'default'; }
   else up.user = params.user || '';
  
   try {
@@ -138,3 +144,4 @@ export default async function handler(req, res) {
     return res.status(200).json(data);
   } catch(e) { return res.status(502).json({ success: false, message: e.message }); }
 }
+ 
