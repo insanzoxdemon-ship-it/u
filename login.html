@@ -68,8 +68,6 @@
     .trust-item i{color:var(--red);font-size:.6rem}
     .card-footer{text-align:center;margin-top:1.4rem;font-size:.78rem;color:var(--muted)}
     .card-footer a{color:var(--red);text-decoration:none;font-weight:600}
-
-    /* 2FA verify screen */
     .screen{display:none;width:100%;max-width:440px}
     .screen.active{display:block;animation:fadeUp .4s ease both}
     .verify-icon{width:72px;height:72px;border-radius:50%;background:rgba(232,0,30,0.1);border:2px solid rgba(232,0,30,0.3);display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:var(--red);margin:0 auto 1.2rem;box-shadow:0 0 30px rgba(232,0,30,0.15)}
@@ -163,7 +161,7 @@
           <span id="timer-label">30s</span>&nbsp;until code refreshes
         </div>
         <div class="alert error" id="twofa-err"><i class="fa-solid fa-triangle-exclamation"></i><span id="twofa-err-msg"></span></div>
-        <div class="alert success" id="twofa-ok"><i class="fa-solid fa-circle-check"></i><span>Authenticated! Redirecting...</span></div>
+        <div class="alert success" id="twofa-ok"><i class="fa-solid fa-circle-check"></i><span>Authenticated! Redirecting…</span></div>
         <div class="otp-row" id="otp-row">
           <input type="text" class="otp-box" maxlength="1" inputmode="numeric">
           <input type="text" class="otp-box" maxlength="1" inputmode="numeric">
@@ -187,10 +185,23 @@
 
 <script src="db.js"></script>
 <script>
-// ── TOTP ──
-const B32='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-function b32ToBytes(s){let bits=0,val=0,out=[];for(let i=0;i<s.length;i++){const idx=B32.indexOf(s[i].toUpperCase());if(idx===-1)continue;val=(val<<5)|idx;bits+=5;if(bits>=8){out.push((val>>>(bits-8))&0xFF);bits-=8;}}return out;}
-function intToBytes(n){const a=new Uint8Array(8);for(let i=7;i>=0;i--){a[i]=n&0xFF;n=Math.floor(n/256);}return a;}
+// ── TOTP helpers ──
+const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+function b32ToBytes(s){
+  let bits=0,val=0,out=[];
+  for(let i=0;i<s.length;i++){
+    const idx=B32.indexOf(s[i].toUpperCase());
+    if(idx===-1) continue;
+    val=(val<<5)|idx; bits+=5;
+    if(bits>=8){out.push((val>>>(bits-8))&0xFF);bits-=8;}
+  }
+  return out;
+}
+function intToBytes(n){
+  const a=new Uint8Array(8);
+  for(let i=7;i>=0;i--){a[i]=n&0xFF;n=Math.floor(n/256);}
+  return a;
+}
 async function getTOTP(secret){
   const counter=Math.floor(Date.now()/1000/30);
   const key=await crypto.subtle.importKey('raw',new Uint8Array(b32ToBytes(secret)),{name:'HMAC',hash:'SHA-1'},false,['sign']);
@@ -203,42 +214,42 @@ async function getTOTP(secret){
 // ── State ──
 let pendingUser = null;
 let timerIv     = null;
+const OWNER     = 'INSANZO';
 
-const OWNER = 'INSANZO';
-
-// ── Helpers ──
+// ── UI helpers ──
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
-function togglePw(id,btn){
-  const inp=document.getElementById(id),icon=btn.querySelector('i');
-  inp.type=inp.type==='password'?'text':'password';
-  icon.className=inp.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash';
+function togglePw(id, btn){
+  const inp=document.getElementById(id), icon=btn.querySelector('i');
+  inp.type = inp.type==='password' ? 'text' : 'password';
+  icon.className = inp.type==='password' ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash';
 }
 function setLoading(on){
-  document.getElementById('login-btn').disabled=on;
-  document.getElementById('login-spin').style.display=on?'block':'none';
-  document.getElementById('login-lbl').style.opacity=on?'0.5':'1';
+  document.getElementById('login-btn').disabled = on;
+  document.getElementById('login-spin').style.display = on ? 'block' : 'none';
+  document.getElementById('login-lbl').style.opacity  = on ? '0.5'  : '1';
 }
 function showErr(msg){
-  document.getElementById('login-err-msg').textContent=msg;
+  document.getElementById('login-err-msg').textContent = msg;
   document.getElementById('login-err').classList.add('show');
   document.getElementById('login-ok').classList.remove('show');
 }
 function showOk(msg){
-  document.getElementById('login-ok-msg').textContent=msg;
+  document.getElementById('login-ok-msg').textContent = msg;
   document.getElementById('login-ok').classList.add('show');
   document.getElementById('login-err').classList.remove('show');
 }
 
 // ── Owner detection ──
 function checkOwner(){
-  const val=document.getElementById('inp-user').value;
-  const isOwner=val.trim().toUpperCase()===OWNER;
-  const badge=document.getElementById('login-badge');
+  const val = document.getElementById('inp-user').value;
+  const isOwner = val.trim().toUpperCase() === OWNER;
+  const badge = document.getElementById('login-badge');
   if(isOwner){
-    badge.className='badge owner-badge';badge.innerHTML='👑 Owner Access';
+    badge.className='badge owner-badge';
+    badge.innerHTML='👑 Owner Access';
     document.getElementById('heading-name').className='owner-name';
     document.getElementById('login-card').classList.add('owner-glow');
     document.getElementById('owner-banner').classList.add('show');
@@ -246,7 +257,8 @@ function checkOwner(){
     document.getElementById('login-subtext').textContent='Full developer access — all packages unlocked.';
     document.getElementById('user-icon').style.color='#FFD700';
   } else {
-    badge.className='badge';badge.innerHTML='<i class="fa-solid fa-lock"></i> Auth.cs Protected';
+    badge.className='badge';
+    badge.innerHTML='<i class="fa-solid fa-lock"></i> Auth.cs Protected';
     document.getElementById('heading-name').className='';
     document.getElementById('login-card').classList.remove('owner-glow');
     document.getElementById('owner-banner').classList.remove('show');
@@ -260,63 +272,61 @@ function checkOwner(){
 async function doLogin(){
   document.getElementById('login-err').classList.remove('show');
   document.getElementById('login-ok').classList.remove('show');
-  const user=document.getElementById('inp-user').value.trim();
-  const pass=document.getElementById('inp-pass').value;
-  if(!user||!pass){showErr('Please fill in all fields.');return;}
+  const user = document.getElementById('inp-user').value.trim();
+  const pass = document.getElementById('inp-pass').value;
+  if(!user || !pass){ showErr('Please fill in all fields.'); return; }
   setLoading(true);
   try {
     await AuthDB.init();
     await AuthDB.seedOwner();
-    const account=await AuthDB.accounts.verifyLogin(user,pass);
+    const account = await AuthDB.accounts.verifyLogin(user, pass);
     if(!account){
       showErr('Invalid username or password.');
-      setLoading(false);return;
+      setLoading(false); return;
     }
-    // Check if account is disabled
-    if(account.enabled===false){
+    if(account.enabled === false){
       showErr('Your account has been disabled. Contact the owner.');
-      setLoading(false);return;
+      setLoading(false); return;
     }
-    pendingUser=account;
-    // Check if 2FA is required
-    if(account.twoFAEnabled){
-      const secret=localStorage.getItem('2fa_secret_'+account.username);
+    pendingUser = account;
+    // Check 2FA — twoFAEnabled defaults to true
+    const needs2FA = account.twoFAEnabled !== false;
+    if(needs2FA){
+      const secret = localStorage.getItem('2fa_secret_' + account.username.toLowerCase());
       if(secret){
-        showOk('Login verified! Enter your 2FA code...');
-        setTimeout(()=>{ setLoading(false); start2FA(account,secret); },800);
-      } else {
-        // 2FA enabled but no secret yet — skip 2FA first time (secret not set up)
-        writeSessionAndGo(account);
+        showOk('Login verified! Enter your 2FA code…');
+        setTimeout(()=>{ setLoading(false); start2FA(account, secret); }, 800);
+        return;
       }
-    } else {
-      writeSessionAndGo(account);
+      // No secret set up yet — skip 2FA this first time
     }
+    writeSessionAndGo(account);
   } catch(e){
-    showErr('Error: '+e.message);
+    showErr('Error: ' + e.message);
     setLoading(false);
   }
 }
 
 function writeSessionAndGo(account){
-  const session={user:account.username,role:account.role,expiry:Date.now()+30*60*1000};
-  localStorage.setItem('authcs_session',JSON.stringify(session));
-  localStorage.setItem('authcs_user',account.username);
+  const session = { user: account.username, role: account.role, expiry: Date.now() + 30*60*1000 };
+  localStorage.setItem('authcs_session', JSON.stringify(session));
+  localStorage.setItem('authcs_user', account.username);
   setLoading(false);
-  window.location.href='dashboard.html';
+  window.location.href = 'dashboard.html';
 }
 
 // ── 2FA ──
 function start2FA(account, secret){
-  pendingUser=account;
-  pendingUser._totpSecret=secret;
+  pendingUser = account;
+  pendingUser._totpSecret = secret;
   startTimer();
   initOtpBoxes();
   showScreen('screen-2fa');
 }
 
 function startTimer(){
-  if(timerIv)clearInterval(timerIv);
-  const circ=document.getElementById('timer-circle'),lbl=document.getElementById('timer-label');
+  if(timerIv) clearInterval(timerIv);
+  const circ=document.getElementById('timer-circle'), lbl=document.getElementById('timer-label');
   const C=2*Math.PI*13;
   const tick=()=>{
     const sec=30-(Math.floor(Date.now()/1000)%30);
@@ -324,40 +334,45 @@ function startTimer(){
     circ.style.strokeDashoffset=C*(1-sec/30);
     circ.style.stroke=sec<=5?'#ff4444':'var(--red)';
   };
-  tick();timerIv=setInterval(tick,1000);
+  tick(); timerIv=setInterval(tick,1000);
 }
 
 function initOtpBoxes(){
   const boxes=[...document.querySelectorAll('.otp-box')];
   boxes.forEach((b,i)=>{
-    b.value='';b.classList.remove('filled');
+    b.value=''; b.classList.remove('filled');
     b.oninput=()=>{
       b.value=b.value.replace(/[^0-9]/g,'').slice(0,1);
-      b.value?b.classList.add('filled'):b.classList.remove('filled');
-      if(b.value&&i<boxes.length-1)boxes[i+1].focus();
-      if(boxes.map(x=>x.value).join('').length===6)verifyTotp();
+      b.value ? b.classList.add('filled') : b.classList.remove('filled');
+      if(b.value && i<boxes.length-1) boxes[i+1].focus();
+      if(boxes.map(x=>x.value).join('').length===6) verifyTotp();
     };
     b.onkeydown=e=>{
-      if(e.key==='Backspace'&&!b.value&&i>0){boxes[i-1].focus();boxes[i-1].value='';boxes[i-1].classList.remove('filled');}
+      if(e.key==='Backspace' && !b.value && i>0){
+        boxes[i-1].focus(); boxes[i-1].value=''; boxes[i-1].classList.remove('filled');
+      }
     };
   });
   boxes[0].focus();
 }
 
-function getOtpValue(){return[...document.querySelectorAll('.otp-box')].map(x=>x.value).join('');}
-function clearOtp(){document.querySelectorAll('.otp-box').forEach(b=>{b.value='';b.classList.remove('filled');});document.querySelectorAll('.otp-box')[0].focus();}
+function getOtpValue(){ return [...document.querySelectorAll('.otp-box')].map(x=>x.value).join(''); }
+function clearOtp(){
+  document.querySelectorAll('.otp-box').forEach(b=>{b.value='';b.classList.remove('filled');});
+  document.querySelectorAll('.otp-box')[0].focus();
+}
 
 async function verifyTotp(){
   const code=getOtpValue();
-  if(code.length!==6)return;
+  if(code.length!==6) return;
   document.getElementById('twofa-btn').disabled=true;
   document.getElementById('twofa-spin').style.display='block';
   document.getElementById('twofa-lbl').style.opacity='0.5';
-  const expected=await getTOTP(pendingUser._totpSecret);
+  const expected = await getTOTP(pendingUser._totpSecret);
   if(code===expected){
     document.getElementById('twofa-ok').classList.add('show');
-    if(timerIv)clearInterval(timerIv);
-    setTimeout(()=>writeSessionAndGo(pendingUser),1200);
+    if(timerIv) clearInterval(timerIv);
+    setTimeout(()=>writeSessionAndGo(pendingUser), 1200);
   } else {
     document.getElementById('twofa-err-msg').textContent='Invalid code. Try again.';
     document.getElementById('twofa-err').classList.add('show');
@@ -370,7 +385,7 @@ async function verifyTotp(){
 
 function backToLogin(e){
   e.preventDefault();
-  if(timerIv)clearInterval(timerIv);
+  if(timerIv) clearInterval(timerIv);
   pendingUser=null;
   document.getElementById('login-err').classList.remove('show');
   document.getElementById('login-ok').classList.remove('show');
@@ -378,10 +393,15 @@ function backToLogin(e){
 }
 
 // ── Cursor ──
-const dot=document.getElementById('cursor-dot'),ring=document.getElementById('cursor-ring');
+const dot=document.getElementById('cursor-dot'), ring=document.getElementById('cursor-ring');
 let mx=-200,my=-200,rx=-200,ry=-200;
 document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
-(function loop(){dot.style.left=mx+'px';dot.style.top=my+'px';rx+=(mx-rx)*0.12;ry+=(my-ry)*0.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(loop);})();
+(function loop(){
+  dot.style.left=mx+'px'; dot.style.top=my+'px';
+  rx+=(mx-rx)*0.12; ry+=(my-ry)*0.12;
+  ring.style.left=rx+'px'; ring.style.top=ry+'px';
+  requestAnimationFrame(loop);
+})();
 document.querySelectorAll('a,button,input').forEach(el=>{
   el.addEventListener('mouseenter',()=>{dot.classList.add('hovered');ring.classList.add('hovered');});
   el.addEventListener('mouseleave',()=>{dot.classList.remove('hovered');ring.classList.remove('hovered');});
@@ -389,15 +409,13 @@ document.querySelectorAll('a,button,input').forEach(el=>{
 
 // ── Enter key ──
 document.addEventListener('keydown',e=>{
-  if(e.key!=='Enter')return;
+  if(e.key!=='Enter') return;
   const s=document.querySelector('.screen.active').id;
-  if(s==='screen-login')doLogin();
+  if(s==='screen-login') doLogin();
 });
 
-// ── Init DB on page load ──
-(async()=>{
-  try{ await AuthDB.init(); await AuthDB.seedOwner(); }catch(e){}
-})();
+// ── Init DB on load ──
+(async()=>{ try{ await AuthDB.init(); await AuthDB.seedOwner(); }catch(e){} })();
 </script>
 </body>
 </html>
