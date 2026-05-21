@@ -147,9 +147,21 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
  
+  // On Vercel, req.url for a serverless function is always just the file's own path.
+  // The sub-path (e.g. /accounts/insanzo) comes via the query string key that
+  // matches the wildcard name in vercel.json — we named it "slug".
   const url    = req.url || '';
-  const path   = url.replace(/^\/api\/db-server/, '').split('?')[0];
   const qs     = Object.fromEntries(new URL('http://x' + url).searchParams);
+  let path = '/';
+  if (qs.slug) {
+    // From vercel.json rewrite: /api/db-server/:slug* -> ?slug=accounts/insanzo
+    path = '/' + (Array.isArray(qs.slug) ? qs.slug.join('/') : qs.slug);
+    delete qs.slug;
+  } else {
+    // Fallback: parse from the raw URL path
+    const rawPath = url.split('?')[0];
+    path = ('/' + rawPath.replace(/^\/api\/db-server\/?/, '')).replace(/\/+/g, '/') || '/';
+  }
   const method = req.method;
   const body   = await parseBody(req);
  
@@ -444,3 +456,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: e.message });
   }
 }
+ 
