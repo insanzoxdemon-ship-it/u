@@ -1,22 +1,12 @@
 /**
- * Auth.cs — db.js  (v3 — fully integrated)
- * IndexedDB storage for accounts, app-users, api-keys, audit-log, meta.
- * Owner default: INSANZO / 1234
- * 2FA secret stored per-account in IndexedDB (not just localStorage).
+ * Auth.cs — db.js (v4 — Real Supabase Backend)
+ * NO IndexedDB. NO localStorage for user data.
+ * All data stored in Supabase via /api/db-server.js
  */
  
 const AuthDB = (() => {
  
-  const DB_NAME    = 'authcs_main';
-  const DB_VERSION = 3;
- 
-  const STORE = {
-    ACCOUNTS  : 'accounts',
-    APP_USERS : 'app_users',
-    API_KEYS  : 'api_keys',
-    AUDIT     : 'audit_log',
-    META      : 'meta',
-  };
+  const API_BASE = '/api/db-server';
  
   const OWNER_USERNAME     = 'INSANZO';
   const OWNER_DEFAULT_PASS = '1234';
@@ -29,353 +19,203 @@ const AuthDB = (() => {
     'insanzouidbypass',
   ];
  
-  let _db = null;
- 
-  /* ── open / upgrade ── */
-  function init() {
-    return new Promise((resolve, reject) => {
-      if (_db) { resolve(_db); return; }
-      const req = indexedDB.open(DB_NAME, DB_VERSION);
- 
-      req.onupgradeneeded = e => {
-        const db  = e.target.result;
-        const old = e.oldVersion;
- 
-        if (!db.objectStoreNames.contains(STORE.ACCOUNTS)) {
-          const s = db.createObjectStore(STORE.ACCOUNTS, { keyPath: 'username' });
-          s.createIndex('role',      'role',      { unique: false });
-          s.createIndex('createdBy', 'createdBy', { unique: false });
-        }
-        if (!db.objectStoreNames.contains(STORE.APP_USERS)) {
-          const s = db.createObjectStore(STORE.APP_USERS, { keyPath: 'id' });
-          s.createIndex('appKey',    'appKey',    { unique: false });
-          s.createIndex('createdBy', 'createdBy', { unique: false });
-        }
-        if (!db.objectStoreNames.contains(STORE.API_KEYS)) {
-          db.createObjectStore(STORE.API_KEYS, { keyPath: 'username' });
-        }
-        if (!db.objectStoreNames.contains(STORE.AUDIT)) {
-          const s = db.createObjectStore(STORE.AUDIT, { keyPath: 'id', autoIncrement: true });
-          s.createIndex('actor',     'actor',     { unique: false });
-          s.createIndex('target',    'target',    { unique: false });
-          s.createIndex('action',    'action',    { unique: false });
-          s.createIndex('timestamp', 'timestamp', { unique: false });
-        }
-        if (!db.objectStoreNames.contains(STORE.META)) {
-          db.createObjectStore(STORE.META, { keyPath: 'key' });
-        }
-      };
- 
-      req.onsuccess = e => { _db = e.target.result; resolve(_db); };
-      req.onerror   = e => reject(e.target.error);
-    });
+  // ─── HTTP helpers ──────────────────────────────────────────────────────────
+  async function _api(method, path, body) {
+    const opts = {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+    };
+    if (body !== undefined) opts.body = JSON.stringify(body);
+    const res = await fetch(API_BASE + path, opts);
+    if (!res.ok) {
+      let msg = 'Server error ' + res.status;
+      try { const j = await res.json(); msg = j.error || msg; } catch(_) {}
+      throw new Error(msg);
+    }
+    return res.json();
   }
  
-  /* ── generic helpers ── */
-  function _tx(store, mode = 'readonly') {
-    return _db.transaction(store, mode).objectStore(store);
-  }
-  function _get(store, key) {
-    return new Promise((res, rej) => {
-      const r = _tx(store).get(key);
-      r.onsuccess = e => res(e.target.result || null);
-      r.onerror   = e => rej(e.target.error);
-    });
-  }
-  function _put(store, value) {
-    return new Promise((res, rej) => {
-      const r = _tx(store, 'readwrite').put(value);
-      r.onsuccess = () => res(true);
-      r.onerror   = e => rej(e.target.error);
-    });
-  }
-  function _delete(store, key) {
-    return new Promise((res, rej) => {
-      const r = _tx(store, 'readwrite').delete(key);
-      r.onsuccess = () => res(true);
-      r.onerror   = e => rej(e.target.error);
-    });
-  }
-  function _getAll(store) {
-    return new Promise((res, rej) => {
-      const r = _tx(store).getAll();
-      r.onsuccess = e => res(e.target.result || []);
-      r.onerror   = e => rej(e.target.error);
-    });
-  }
-  function _getByIndex(store, index, value) {
-    return new Promise((res, rej) => {
-      const r = _tx(store).index(index).getAll(value);
-      r.onsuccess = e => res(e.target.result || []);
-      r.onerror   = e => rej(e.target.error);
-    });
-  }
-  function _putMany(store, items) {
-    return new Promise((res, rej) => {
-      const tx = _db.transaction(store, 'readwrite');
-      const s  = tx.objectStore(store);
-      items.forEach(i => s.put(i));
-      tx.oncomplete = () => res(true);
-      tx.onerror    = e => rej(e.target.error);
-    });
+  const GET  = (path)       => _api('GET',    path);
+  const POST = (path, body) => _api('POST',   path, body);
+  const PUT  = (path, body) => _api('PUT',    path, body);
+  const DEL  = (path)       => _api('DELETE', path);
+ 
+  // ─── init ──────────────────────────────────────────────────────────────────
+  async function init() {
+    try { await GET('/ping'); } catch(e) { console.warn('AuthDB backend unreachable:', e.message); }
+    return true;
   }
  
-  /* ══════════════════════════════════════
-     ACCOUNTS
-     ══════════════════════════════════════ */
+  // ─── ACCOUNTS ─────────────────────────────────────────────────────────────
   const accounts = {
  
     async getByUsername(username) {
       if (!username) return null;
-      return _get(STORE.ACCOUNTS, username.toLowerCase());
+      try {
+        const r = await GET('/accounts/' + encodeURIComponent(username.toLowerCase()));
+        return r || null;
+      } catch(e) {
+        if (e.message.includes('404') || e.message.includes('not found')) return null;
+        throw e;
+      }
     },
-    async getAll()        { return _getAll(STORE.ACCOUNTS); },
-    async getByRole(role) { return _getByIndex(STORE.ACCOUNTS, 'role', role); },
-    async getCreatedBy(u) { return _getByIndex(STORE.ACCOUNTS, 'createdBy', (u||'').toLowerCase()); },
  
-    /**
-     * Save / update an account.
-     * Preserves existing fields (like totpSecret) if not supplied.
-     */
-    async save(data) {
-      const key = (data.username || '').toLowerCase();
-      // Preserve existing record so we don't wipe totpSecret etc.
-      let existing = null;
-      try { existing = await _get(STORE.ACCOUNTS, key); } catch(_) {}
- 
-      const r = {
-        ...(existing || {}),
-        username      : key,
-        displayName   : data.displayName   !== undefined ? data.displayName   : (existing?.displayName   || data.username),
-        password      : data.password      !== undefined ? data.password      : (existing?.password      || ''),
-        role          : data.role          !== undefined ? data.role          : (existing?.role          || 'reseller'),
-        packages      : data.packages      !== undefined ? data.packages      : (existing?.packages      || []),
-        createdBy     : data.createdBy     !== undefined ? (data.createdBy||'').toLowerCase() : (existing?.createdBy || ''),
-        since         : existing?.since    || data.since || Date.now(),
-        apiEnabled    : data.apiEnabled    !== undefined ? !!data.apiEnabled    : (existing ? !!existing.apiEnabled    : false),
-        twoFAEnabled  : data.twoFAEnabled  !== undefined ? !!data.twoFAEnabled  : (existing ? !!existing.twoFAEnabled  : true),
-        enabled       : data.enabled       !== undefined ? !!data.enabled       : (existing ? !!existing.enabled       : true),
-        // totpSecret preserved from existing unless explicitly set
-        totpSecret    : data.totpSecret    !== undefined ? data.totpSecret    : (existing?.totpSecret    || ''),
-        updatedAt     : Date.now(),
-      };
-      await _put(STORE.ACCOUNTS, r);
-      return r;
-    },
+    async getAll()        { return GET('/accounts'); },
+    async getByRole(role) { return GET('/accounts?role=' + encodeURIComponent(role)); },
+    async getCreatedBy(u) { return GET('/accounts?createdBy=' + encodeURIComponent((u||'').toLowerCase())); },
+    async save(data)      { return POST('/accounts', data); },
  
     async verifyLogin(username, password) {
-      const r = await this.getByUsername(username);
-      if (!r) return null;
-      if (r.enabled === false) return null;
-      return r.password === password ? r : null;
+      try {
+        const r = await POST('/accounts/verify', { username, password });
+        return r || null;
+      } catch(_) { return null; }
     },
  
     async changePassword(username, newPass, changedBy) {
-      const r = await this.getByUsername(username);
-      if (!r) throw new Error(`Account "${username}" not found.`);
-      r.password  = newPass;
-      r.updatedAt = Date.now();
-      await _put(STORE.ACCOUNTS, r);
-      await audit.log({ actor: (changedBy||'').toLowerCase(), target: username.toLowerCase(), action: 'password_change', detail: `Password changed for ${username}` });
-      return r;
+      return PUT('/accounts/' + encodeURIComponent(username.toLowerCase()) + '/password', {
+        newPassword: newPass,
+        changedBy: (changedBy||'').toLowerCase(),
+      });
     },
  
     async setTotpSecret(username, secret) {
-      const r = await this.getByUsername(username);
-      if (!r) throw new Error(`Account "${username}" not found.`);
-      r.totpSecret = secret || '';
-      r.updatedAt  = Date.now();
-      await _put(STORE.ACCOUNTS, r);
-      // Keep localStorage in sync for backward-compat (login.html reads it)
-      if (secret) {
-        localStorage.setItem('2fa_secret_' + username.toLowerCase(), secret);
-      } else {
-        localStorage.removeItem('2fa_secret_' + username.toLowerCase());
-      }
-      return r;
+      return PUT('/accounts/' + encodeURIComponent(username.toLowerCase()) + '/totp', {
+        secret: secret || '',
+      });
     },
  
     async getTotpSecret(username) {
-      const r = await this.getByUsername(username);
-      if (!r) return '';
-      // Prefer DB value; fall back to localStorage (legacy)
-      if (r.totpSecret) return r.totpSecret;
-      const ls = localStorage.getItem('2fa_secret_' + username.toLowerCase());
-      if (ls) { await this.setTotpSecret(username, ls); return ls; }
-      return '';
+      const acc = await this.getByUsername(username);
+      return acc ? (acc.totpSecret || '') : '';
     },
  
     async updatePackages(username, packages, changedBy) {
-      const r = await this.getByUsername(username);
-      if (!r) throw new Error(`Account "${username}" not found.`);
-      r.packages  = packages;
-      r.updatedAt = Date.now();
-      await _put(STORE.ACCOUNTS, r);
-      await audit.log({ actor: (changedBy||'').toLowerCase(), target: username.toLowerCase(), action: 'packages_updated', detail: `Packages updated: [${packages.join(', ')}]` });
-      return r;
+      return PUT('/accounts/' + encodeURIComponent(username.toLowerCase()) + '/packages', {
+        packages,
+        changedBy: (changedBy||'').toLowerCase(),
+      });
     },
  
     async setApiEnabled(username, enabled, changedBy) {
-      const r = await this.getByUsername(username);
-      if (!r) throw new Error(`Account "${username}" not found.`);
-      r.apiEnabled = !!enabled;
-      r.updatedAt  = Date.now();
-      await _put(STORE.ACCOUNTS, r);
-      await audit.log({ actor: (changedBy||'').toLowerCase(), target: username.toLowerCase(), action: enabled ? 'api_enabled' : 'api_disabled', detail: `API ${enabled?'enabled':'disabled'} for ${username}` });
-      return r;
+      return PUT('/accounts/' + encodeURIComponent(username.toLowerCase()) + '/api-enabled', {
+        enabled: !!enabled,
+        changedBy: (changedBy||'').toLowerCase(),
+      });
     },
  
     async set2FAEnabled(username, enabled, changedBy) {
-      const r = await this.getByUsername(username);
-      if (!r) throw new Error(`Account "${username}" not found.`);
-      r.twoFAEnabled = !!enabled;
-      r.updatedAt    = Date.now();
-      await _put(STORE.ACCOUNTS, r);
-      await audit.log({ actor: (changedBy||'').toLowerCase(), target: username.toLowerCase(), action: enabled ? '2fa_enabled' : '2fa_disabled', detail: `2FA ${enabled?'enabled':'disabled'} for ${username}` });
-      return r;
+      return PUT('/accounts/' + encodeURIComponent(username.toLowerCase()) + '/2fa-enabled', {
+        enabled: !!enabled,
+        changedBy: (changedBy||'').toLowerCase(),
+      });
     },
  
     async setEnabled(username, enabled, changedBy) {
-      const r = await this.getByUsername(username);
-      if (!r) throw new Error(`Account "${username}" not found.`);
-      r.enabled   = !!enabled;
-      r.updatedAt = Date.now();
-      await _put(STORE.ACCOUNTS, r);
-      await audit.log({ actor: (changedBy||'').toLowerCase(), target: username.toLowerCase(), action: enabled ? 'account_enabled' : 'account_disabled', detail: `Account ${enabled?'enabled':'disabled'} for ${username}` });
-      return r;
+      return PUT('/accounts/' + encodeURIComponent(username.toLowerCase()) + '/enabled', {
+        enabled: !!enabled,
+        changedBy: (changedBy||'').toLowerCase(),
+      });
     },
  
     async remove(username, deletedBy) {
-      const key = (username||'').toLowerCase();
-      await _delete(STORE.ACCOUNTS, key);
-      await _delete(STORE.API_KEYS, key);
-      localStorage.removeItem('2fa_secret_' + key);
-      await audit.log({ actor: (deletedBy||'').toLowerCase(), target: key, action: 'account_deleted', detail: `Account "${username}" deleted by ${deletedBy}` });
+      return DEL('/accounts/' + encodeURIComponent(username.toLowerCase()) +
+        '?deletedBy=' + encodeURIComponent((deletedBy||'').toLowerCase()));
     },
   };
  
-  /* ══════════════════════════════════════
-     APP USERS
-     ══════════════════════════════════════ */
+  // ─── APP USERS ─────────────────────────────────────────────────────────────
   const appUsers = {
-    makeId(username, appKey) { return appKey + '::' + (username||'').toLowerCase(); },
-    async getById(id)        { return _get(STORE.APP_USERS, id); },
-    async getByApp(appKey)   { return _getByIndex(STORE.APP_USERS, 'appKey', appKey); },
-    async getAll()           { return _getAll(STORE.APP_USERS); },
-    async getCreatedBy(u)    { return _getByIndex(STORE.APP_USERS, 'createdBy', (u||'').toLowerCase()); },
- 
-    async save(u) {
-      const r = {
-        id        : this.makeId(u.username, u.appKey),
-        username  : u.username,
-        appKey    : u.appKey,
-        display   : u.display   || u.appKey,
-        hwid      : u.hwid      || '—',
-        expiry    : u.expiry    || '0',
-        banned    : !!u.banned,
-        expired   : !!u.expired,
-        createdBy : (u.createdBy || '').toLowerCase(),
-        createdAt : u.createdAt || Date.now(),
-        updatedAt : Date.now(),
-      };
-      await _put(STORE.APP_USERS, r);
-      return r;
+    makeId(username, appKey) {
+      return appKey + '::' + (username||'').toLowerCase();
     },
- 
-    async saveMany(users) {
-      return _putMany(STORE.APP_USERS, users.map(u => ({
-        id        : this.makeId(u.username, u.appKey),
-        username  : u.username,
-        appKey    : u.appKey,
-        display   : u.display   || u.appKey,
-        hwid      : u.hwid      || '—',
-        expiry    : u.expiry    || '0',
-        banned    : !!u.banned,
-        expired   : !!u.expired,
-        createdBy : (u.createdBy || '').toLowerCase(),
-        createdAt : u.createdAt || Date.now(),
-        updatedAt : Date.now(),
-      })));
+    async getById(id) {
+      try { return await GET('/app-users/' + encodeURIComponent(id)); } catch(_) { return null; }
     },
- 
+    async getByApp(appKey)  { return GET('/app-users?appKey=' + encodeURIComponent(appKey)); },
+    async getAll()           { return GET('/app-users'); },
+    async getCreatedBy(u)    { return GET('/app-users?createdBy=' + encodeURIComponent((u||'').toLowerCase())); },
+    async save(u)            { return POST('/app-users', u); },
+    async saveMany(users)    { return POST('/app-users/bulk', { users }); },
     async remove(username, appKey) {
-      return _delete(STORE.APP_USERS, this.makeId(username, appKey));
+      const id = this.makeId(username, appKey);
+      return DEL('/app-users/' + encodeURIComponent(id));
     },
   };
  
-  /* ══════════════════════════════════════
-     API KEYS
-     ══════════════════════════════════════ */
+  // ─── API KEYS ──────────────────────────────────────────────────────────────
   const apiKeys = {
     _generate(seed) {
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-      const h = (seed + Date.now() + Math.random()).split('').reduce((a,c,i) => a + c.charCodeAt(0) * (i+7), 0);
+      const h = (seed + Date.now() + Math.random())
+        .split('').reduce((a,c,i) => a + c.charCodeAt(0) * (i+7), 0);
       let key = 'ac_';
-      for (let i = 0; i < 32; i++) key += chars[Math.abs(Math.floor(h*(i+1.3)*17+i*31)) % chars.length];
+      for (let i=0; i<32; i++)
+        key += chars[Math.abs(Math.floor(h*(i+1.3)*17+i*31)) % chars.length];
       return key;
     },
     async getOrCreate(username) {
-      const key = (username||'').toLowerCase();
-      let r = await _get(STORE.API_KEYS, key);
-      if (!r) { r = { username: key, key: this._generate(username), createdAt: Date.now() }; await _put(STORE.API_KEYS, r); }
-      return r.key;
+      try {
+        const r = await GET('/api-keys/' + encodeURIComponent(username.toLowerCase()));
+        if (r && r.key) return r.key;
+      } catch(_) {}
+      const newKey = this._generate(username);
+      await POST('/api-keys', { username: username.toLowerCase(), key: newKey });
+      return newKey;
     },
     async get(username) {
-      const r = await _get(STORE.API_KEYS, (username||'').toLowerCase());
-      return r ? r.key : null;
+      try {
+        const r = await GET('/api-keys/' + encodeURIComponent(username.toLowerCase()));
+        return r ? r.key : null;
+      } catch(_) { return null; }
     },
     async regenerate(username, changedBy) {
-      const key    = (username||'').toLowerCase();
       const newKey = this._generate(username + Date.now() + Math.random());
-      await _put(STORE.API_KEYS, { username: key, key: newKey, createdAt: Date.now() });
-      await audit.log({ actor: (changedBy||key).toLowerCase(), target: key, action: 'api_key_regenerated', detail: `API key regenerated for ${username}` });
+      await PUT('/api-keys/' + encodeURIComponent(username.toLowerCase()), {
+        key: newKey, changedBy: (changedBy||username).toLowerCase(),
+      });
       return newKey;
     },
   };
  
-  /* ══════════════════════════════════════
-     AUDIT
-     ══════════════════════════════════════ */
+  // ─── AUDIT ─────────────────────────────────────────────────────────────────
   const audit = {
     async log({ actor, target, action, detail }) {
-      return _put(STORE.AUDIT, { actor: actor||'', target: target||'', action: action||'', detail: detail||'', timestamp: Date.now() });
+      try { await POST('/audit', { actor:actor||'', target:target||'', action:action||'', detail:detail||'' }); } catch(_) {}
     },
-    async getAll()          { return _getAll(STORE.AUDIT); },
-    async getRecent(n = 50) { const a = await this.getAll(); return a.sort((x,y)=>y.timestamp-x.timestamp).slice(0,n); },
+    async getAll()          { return GET('/audit'); },
+    async getRecent(n = 50) { return GET('/audit?limit=' + n); },
   };
  
-  /* ══════════════════════════════════════
-     META
-     ══════════════════════════════════════ */
+  // ─── META ──────────────────────────────────────────────────────────────────
   const meta = {
-    async set(key, val) { return _put(STORE.META, { key, value: val }); },
-    async get(key)      { const r = await _get(STORE.META, key); return r ? r.value : null; },
-    async remove(key)   { return _delete(STORE.META, key); },
+    async set(key, val) { return POST('/meta', { key, value: val }); },
+    async get(key) {
+      try { const r = await GET('/meta/' + encodeURIComponent(key)); return r ? r.value : null; }
+      catch(_) { return null; }
+    },
+    async remove(key) { return DEL('/meta/' + encodeURIComponent(key)); },
   };
  
-  /* ══════════════════════════════════════
-     SEED OWNER
-     ══════════════════════════════════════ */
+  // ─── SEED OWNER ────────────────────────────────────────────────────────────
   async function seedOwner() {
     const existing = await accounts.getByUsername(OWNER_USERNAME);
     if (existing) return existing;
     return accounts.save({
-      username     : OWNER_USERNAME,
-      displayName  : OWNER_USERNAME,
-      password     : OWNER_DEFAULT_PASS,
-      role         : 'owner',
-      packages     : [...ALL_APPS],
-      createdBy    : '',
-      apiEnabled   : true,
-      twoFAEnabled : true,
-      enabled      : true,
-      totpSecret   : '',
+      username    : OWNER_USERNAME,
+      displayName : OWNER_USERNAME,
+      password    : OWNER_DEFAULT_PASS,
+      role        : 'owner',
+      packages    : [...ALL_APPS],
+      createdBy   : '',
+      apiEnabled  : true,
+      twoFAEnabled: true,
+      enabled     : true,
+      totpSecret  : '',
     });
   }
  
-  /* ══════════════════════════════════════
-     TOTP HELPERS  (shared, called from login + dashboard)
-     ══════════════════════════════════════ */
+  // ─── TOTP ──────────────────────────────────────────────────────────────────
   const totp = {
     B32: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567',
  
@@ -409,7 +249,6 @@ const AuthDB = (() => {
       return (code % 1000000).toString().padStart(6,'0');
     },
  
-    /** Generate a random base32 secret (160-bit) */
     generateSecret() {
       const bytes = crypto.getRandomValues(new Uint8Array(20));
       let out = '';
@@ -427,14 +266,16 @@ const AuthDB = (() => {
       return out.slice(0,32);
     },
  
-    /** Build a QR-code URI for Google Authenticator */
     otpauthUri(username, secret, issuer = 'Auth.cs') {
       return `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(username)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
     },
   };
  
-  return { init, seedOwner, accounts, appUsers, apiKeys, audit, meta, totp, STORE, OWNER_USERNAME, ALL_APPS };
+  return {
+    init, seedOwner, accounts, appUsers, apiKeys, audit, meta, totp,
+    OWNER_USERNAME, ALL_APPS,
+  };
+ 
 })();
  
 window.AuthDB = AuthDB;
- 
