@@ -186,20 +186,19 @@ export default async function handler(req, res) {
     // POST /accounts  — create account
     if (path === '/accounts' && method === 'POST') {
       const u = body;
-      // Check duplicate
-      const check = await sb('GET', 'accounts', {
-        filter: 'username=eq.' + encodeURIComponent((u.username||'').toLowerCase()),
-        single: true,
-      }).catch(() => null);
+      // Check duplicate — PGRST116 means 0 rows = safe to create
+      let check = null;
+      try { check = await sb('GET', 'accounts', { filter: 'username=eq.' + encodeURIComponent((u.username||'').toLowerCase()), single: true }); } catch(e) { check = null; }
       if (check) return res.status(409).json({ error: 'Username already exists.' });
  
       const hashed = await hashPass(u.password || '');
+      const pkgs = Array.isArray(u.packages) ? u.packages : [];
       const rows = await sbUpsert('accounts', {
         username     : (u.username||'').toLowerCase(),
         display_name : u.displayName || u.username || '',
         password     : hashed,
         role         : u.role || 'reseller',
-        packages     : u.packages || [],
+        packages     : pkgs,
         created_by   : (u.createdBy||'').toLowerCase(),
         api_enabled  : u.apiEnabled  === true,
         twofa_enabled: u.twoFAEnabled !== false,
@@ -213,10 +212,13 @@ export default async function handler(req, res) {
     // POST /accounts/verify — login check
     if (path === '/accounts/verify' && method === 'POST') {
       const { username, password } = body;
-      const rows = await sb('GET', 'accounts', {
-        filter: 'username=eq.' + encodeURIComponent((username||'').toLowerCase()),
-        single: true,
-      }).catch(() => null);
+      let rows = null;
+      try {
+        rows = await sb('GET', 'accounts', {
+          filter: 'username=eq.' + encodeURIComponent((username||'').toLowerCase()),
+          single: true,
+        });
+      } catch(e) { rows = null; }
       if (!rows) return res.status(200).json(null);
       const hashed = await hashPass(password || '');
       if (rows.password !== hashed) return res.status(200).json(null);
