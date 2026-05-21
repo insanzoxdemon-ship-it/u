@@ -769,20 +769,24 @@ function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 // EXPIRY FORMATTING
 // ═══════════════════════════════════════════
 function fmtExpiry(e) {
+  // Lifetime indicators from KeyAuth: blank, '0', 0, '-1', 'Never', 'never', 'Lifetime'
   if (!e || e==='' || e==='0' || e===0 || e==='-1' || e==='Never' || e==='never' || e==='Lifetime') return 'Lifetime';
-  const n=parseInt(e);
-  if (isNaN(n) || n<=0) return 'Lifetime';
-  // KeyAuth stores expiry as unix timestamp (seconds). If value is unreasonably small treat as Lifetime.
-  if (n < 1000000) return 'Lifetime';
-  const d=new Date(n*1000);
+  const s = String(e).trim();
+  const n = parseInt(s, 10);
+  if (isNaN(n) || n <= 0) return 'Lifetime';
+  // KeyAuth expiry is a Unix timestamp in SECONDS (e.g. 1748736000).
+  // Valid timestamps are > Jan 1 2020 = 1577836800.
+  // Anything smaller than that is not a real date — treat as Lifetime.
+  if (n < 1577836800) return 'Lifetime';
+  const d = new Date(n * 1000);
   if (isNaN(d.getTime())) return 'Lifetime';
-  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
 }
 function isExpired(e) {
   if (!e || e==='' || e==='0' || e===0 || e==='-1') return false;
-  const n=parseInt(e);
-  if (isNaN(n) || n<=0 || n<1000000) return false;
-  return (n*1000)<Date.now();
+  const n = parseInt(String(e).trim(), 10);
+  if (isNaN(n) || n <= 0 || n < 1577836800) return false;
+  return (n * 1000) < Date.now();
 }
 function avatarColor(role){ if(role==='owner') return 'av-owner'; if(role==='subseller') return 'av-sub'; if(role==='reseller') return 'av-res'; return 'av-default'; }
  
