@@ -31,6 +31,9 @@ async function sb(method, table, { filter = '', body, single = false } = {}) {
   if (!res.ok) {
     let msg = text;
     try { msg = JSON.parse(text).message || msg; } catch(_) {}
+    console.log('SUPABASE ERROR url:', url);
+    console.log('SUPABASE ERROR status:', res.status);
+    console.log('SUPABASE ERROR body:', text);
     throw new Error(msg);
   }
   if (!text) return single ? null : [];
