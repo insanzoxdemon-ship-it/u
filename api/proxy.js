@@ -112,7 +112,7 @@ export default async function handler(req, res) {
           const slug = Object.entries(SLUG_MAP).find(([, v]) => v === appid)?.[0] || appid;
           for (const u of d.users) {
             const expiryTs = parseInt(u.expiry);
-            const isLifetime = !u.expiry || u.expiry === '0' || u.expiry === 0 || isNaN(expiryTs) || expiryTs <= 0;
+            const isLifetime = !u.expiry || u.expiry === '0' || u.expiry === 0 || u.expiry === '-1' || isNaN(expiryTs) || expiryTs <= 0 || expiryTs < 1577836800;
             results.push({
               application: slug,
               username: u.username || '—',
