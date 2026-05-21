@@ -11,8 +11,8 @@
   },
   "rewrites": [
     {
-      "source": "/api/db-server/:path*",
-      "destination": "/api/db-server?_path=:path*"
+      "source": "/api/db-server/:slug*",
+      "destination": "/api/db-server?slug=:slug*"
     },
     {
       "source": "/api/login",
