@@ -360,6 +360,27 @@
     @media(max-width:900px){.sidebar{display:none}.main{margin-left:0}.overview-grid{grid-template-columns:1fr}}
     @media(max-width:640px){.packages-grid{grid-template-columns:1fr}.stats-grid{grid-template-columns:1fr 1fr}.content{padding:1.4rem .9rem}.topbar{padding:.85rem 1.4rem}}
   </style>
+ 
+  <script>
+    // ── Anti-Inspect ──────────────────────────────────────────────────────────
+    (function(){
+      // Disable right-click
+      document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+      // Block common devtools shortcuts
+      document.addEventListener('keydown', function(e){
+        if (e.key==='F12') { e.preventDefault(); return false; }
+        if (e.ctrlKey && e.shiftKey && (e.key==='I'||e.key==='i'||e.key==='J'||e.key==='j'||e.key==='C'||e.key==='c')) { e.preventDefault(); return false; }
+        if (e.ctrlKey && (e.key==='U'||e.key==='u')) { e.preventDefault(); return false; }
+      });
+      // Devtools size-change detection
+      var _w=window.outerWidth-window.innerWidth>160, _h=window.outerHeight-window.innerHeight>160;
+      setInterval(function(){
+        var dw=window.outerWidth-window.innerWidth>160, dh=window.outerHeight-window.innerHeight>160;
+        if((dw&&!_w)||(dh&&!_h)){ document.body.innerHTML=''; location.href='index.html'; }
+        _w=dw; _h=dh;
+      }, 1000);
+    })();
+  </script>
 </head>
 <body>
 <div id="cursor-dot"></div>
@@ -415,7 +436,7 @@
         <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-users"></i></div><div class="stat-change neutral">Live</div><div class="stat-val" id="ov-total">—</div><div class="stat-label">Total Users</div></div>
         <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div><div class="stat-change up">Active</div><div class="stat-val" id="ov-active">—</div><div class="stat-label">Active Users</div></div>
         <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-clock-rotate-left"></i></div><div class="stat-change neutral">Expired</div><div class="stat-val" id="ov-expired">—</div><div class="stat-label">Expired Users</div></div>
-        <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-ban"></i></div><div class="stat-change red">Banned</div><div class="stat-val" id="ov-banned">—</div><div class="stat-label">Banned Users</div></div>
+        
       </div>
       <div class="overview-grid">
         <div class="card"><div class="card-title"><i class="fa-solid fa-server"></i> App Status</div><div id="ov-app-status-rows"></div></div>
@@ -441,12 +462,12 @@
     <!-- USERS -->
     <div class="page" id="page-users">
       <div class="section-header">
-        <div class="section-header-left"><div class="tag">Users</div><h2>Manage <span>Users</span></h2><p>Reset HWID, Ban/Unban, or Delete with one click.</p></div>
+        <div class="section-header-left"><div class="tag">Users</div><h2>Manage <span>Users</span></h2><p>Reset HWID or Delete users with one click.</p></div>
       </div>
       <div class="users-toolbar">
         <div class="search-wrap"><i class="fa-solid fa-magnifying-glass"></i><input type="text" class="search-input" id="user-search" placeholder="Search username…"></div>
         <select class="filter-select" id="pkg-filter"><option value="all">All Packages</option></select>
-        <select class="filter-select" id="status-filter"><option value="all">All Statuses</option><option value="active">Active</option><option value="expired">Expired</option><option value="banned">Banned</option></select>
+        <select class="filter-select" id="status-filter"><option value="all">All Statuses</option><option value="active">Active</option><option value="expired">Expired</option></select>
         <button class="tb-btn" id="refresh-users-btn"><i class="fa-solid fa-rotate"></i> Refresh</button>
         <button class="add-btn" id="open-add-user-btn"><i class="fa-solid fa-user-plus"></i> Add User</button>
       </div>
@@ -524,7 +545,13 @@
         <div class="ep-card"><div class="ep-card-top"></div><div class="ep-head"><span class="mb mb-post">POST</span><span class="ep-path">/api/proxy/package/{slug}/days/{days}/user/{username}/pass/{password}</span></div><div class="ep-body"><p class="ep-desc">Creates a new licensed user in the specified package.</p><div class="cb"><button class="cb-copy" onclick="cpCode(this)"><i class="fa-solid fa-copy"></i> Copy</button><pre><span class="ck">POST</span>  <span class="cu">https://authcs.vercel.app/api/proxy/package/aimkill/days/30/user/john/pass/pass123</span></pre></div></div></div>
         <div class="ep-card"><div class="ep-card-top"></div><div class="ep-head"><span class="mb mb-post">POST</span><span class="ep-path">/api/proxy/user/{username}/resethwid</span></div><div class="ep-body"><p class="ep-desc">Clears the HWID lock for a user.</p></div></div>
         <div class="ep-card"><div class="ep-card-top"></div><div class="ep-head"><span class="mb mb-delete">DELETE</span><span class="ep-path">/api/proxy/user/{username}/delete</span></div><div class="ep-body"><p class="ep-desc">Permanently deletes a user. <strong style="color:#ff7b7b">Irreversible.</strong></p></div></div>
-        <div class="ep-card"><div class="ep-card-top"></div><div class="ep-head"><span class="mb mb-get">GET</span><span class="ep-path">/api/proxy?appid={slug}&type=fetchallusers</span></div><div class="ep-body"><p class="ep-desc">Fetches all users for a given package.</p></div></div>
+        <div class="ep-card"><div class="ep-card-top"></div><div class="ep-head"><span class="mb mb-get">GET</span><span class="ep-path">/api/proxy?appid={slug}&type=fetchallusers</span></div><div class="ep-body"><p class="ep-desc">Fetches all users for a specific package (aimkill, external, internal, streamer, uidbypass).</p></div></div>
+        <div class="ep-card"><div class="ep-card-top"></div><div class="ep-head"><span class="mb mb-get">GET</span><span class="ep-path">/api/proxy/fetch-all-users</span></div><div class="ep-body"><p class="ep-desc">Fetches all users across <strong>all</strong> applications. Returns: application, username, expiry for every user in every package.</p><div class="cb"><button class="cb-copy" onclick="cpCode(this)"><i class="fa-solid fa-copy"></i> Copy</button><pre><span class="ck">GET</span>  <span class="cu">https://authcs.vercel.app/api/proxy/fetch-all-users</span>
+<span class="cc">// Example response:</span>
+<span class="cc">// { "success": true, "total": 42, "users": [</span>
+<span class="cc">//   { "application": "aimkill", "username": "john", "expiry": "Jun 15, 2025" },</span>
+<span class="cc">//   { "application": "external", "username": "jane", "expiry": "Lifetime" }</span>
+<span class="cc">// ]}</span></pre></div></div></div>
       </div>
     </div>
  
@@ -742,18 +769,19 @@ function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 // EXPIRY FORMATTING
 // ═══════════════════════════════════════════
 function fmtExpiry(e) {
-  if (!e || e==='0'||e===0||e==='Never'||e==='never') return 'Lifetime';
+  if (!e || e==='' || e==='0' || e===0 || e==='-1' || e==='Never' || e==='never' || e==='Lifetime') return 'Lifetime';
   const n=parseInt(e);
-  if (isNaN(n)||n<=0) return 'Lifetime';
-  const ms=n*1000;
-  const d=new Date(ms);
-  if (isNaN(d.getTime())) return String(e);
+  if (isNaN(n) || n<=0) return 'Lifetime';
+  // KeyAuth stores expiry as unix timestamp (seconds). If value is unreasonably small treat as Lifetime.
+  if (n < 1000000) return 'Lifetime';
+  const d=new Date(n*1000);
+  if (isNaN(d.getTime())) return 'Lifetime';
   return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
 }
 function isExpired(e) {
-  if (!e||e==='0'||e===0) return false;
+  if (!e || e==='' || e==='0' || e===0 || e==='-1') return false;
   const n=parseInt(e);
-  if (isNaN(n)||n<=0) return false;
+  if (isNaN(n) || n<=0 || n<1000000) return false;
   return (n*1000)<Date.now();
 }
 function avatarColor(role){ if(role==='owner') return 'av-owner'; if(role==='subseller') return 'av-sub'; if(role==='reseller') return 'av-res'; return 'av-default'; }
@@ -770,20 +798,7 @@ async function kaCall(appKey, params){
   return r.json();
 }
  
-// ═══════════════════════════════════════════
-// BAN / UNBAN
-// ═══════════════════════════════════════════
-async function doBanUnban(username, appKey, btn) {
-  const isBanned=btn.dataset.banned==='1';
-  const action=isBanned?'unban':'ban', actionLabel=isBanned?'unbanned':'banned';
-  btn.classList.add('loading'); btn.disabled=true;
-  try {
-    const data=await kaCall(appKey,{type:action,user:username});
-    if(data.success){ toast(`User "${username}" ${actionLabel} successfully.`); await loadAllUsers(false); }
-    else toast(`Failed to ${action} "${username}": ${data.message||'Unknown error'}`,true);
-  } catch(e){ toast('Network error: '+e.message,true); }
-  btn.classList.remove('loading'); btn.disabled=false;
-}
+ 
  
 async function doResetHWID(username, appKey, btn){
   btn.classList.add('loading'); btn.disabled=true;
@@ -874,7 +889,7 @@ async function fetchApp(k){
         id:k+'::'+((u.username||'').toLowerCase()),
         username:u.username||'—', appKey:k, display:APP_DISPLAY[k]||k,
         hwid:u.hwid||'—', expiryRaw:u.expiry, expiry:fmtExpiry(u.expiry),
-        banned:String(u.banned)==='1'||u.banned===true, expired:isExpired(u.expiry)
+        banned:false, expired:isExpired(u.expiry)
       }));
     }
     return [];
@@ -910,7 +925,7 @@ function updateStats(){
   setEl('ov-total',vis.length);
   setEl('ov-active',vis.filter(u=>!u.expired&&!u.banned).length);
   setEl('ov-expired',vis.filter(u=>u.expired).length);
-  setEl('ov-banned',vis.filter(u=>u.banned).length);
+ 
   myApps.forEach(k=>{const e=document.getElementById('cnt-'+k);if(e) e.textContent=vis.filter(u=>u.appKey===k).length;});
   renderDist();
 }
@@ -938,7 +953,7 @@ async function renderTable(){
   if(pkg!=='all') list=list.filter(u=>u.appKey===pkg);
   if(st==='active') list=list.filter(u=>!u.expired&&!u.banned);
   else if(st==='expired') list=list.filter(u=>u.expired);
-  else if(st==='banned') list=list.filter(u=>u.banned);
+ 
   if(q) list=list.filter(u=>u.username.toLowerCase().includes(q)||(u.display||'').toLowerCase().includes(q));
   if(currentRole!=='owner'){
     let dbUsers=[];
@@ -977,12 +992,8 @@ async function renderTable(){
         let byLabel=by?`<span style="font-size:.77rem;font-weight:600">${esc(by)}</span>`:`<span style="font-size:.72rem;font-weight:700;color:#4ade80;display:flex;align-items:center;gap:.3rem"><i class="fa-solid fa-code" style="font-size:.6rem"></i>Auth.cs API</span>`;
         cbCell=`<td>${byLabel}</td>`;
       }
-      const statusClass=expired?'expired':(banned?'banned':'active');
-      const statusText=expired?'Expired':(banned?'Banned':'Active');
-      const bannedAttr=banned?'1':'0';
-      const banIcon=banned?'user-check':'ban';
-      const banTitle=banned?'Unban User':'Ban User';
-      const banClass=banned?'unban-btn':'ban-btn';
+      const statusClass=expired?'expired':'active';
+      const statusText=expired?'Expired':'Active';
       const expiryDisplay=u.expiry||'Lifetime';
       return `<tr>
         <td><div class="user-cell"><div class="user-avatar-sm ${av}" style="background:var(--red)">${avLetter}</div><div><div class="u-name-bold">${esc(u.username)}</div><div class="u-sub-text">${esc(u.display)}</div></div></div></td>
@@ -992,7 +1003,6 @@ async function renderTable(){
         <td><span class="badge ${statusClass}">${statusText}</span></td>
         ${cbCell}
         <td><div class="tbl-actions">
-          <button class="tbl-btn ${banClass}" title="${banTitle}" data-banned="${bannedAttr}" onclick="doBanUnban('${esc(u.username)}','${esc(u.appKey)}',this)"><i class="fa-solid fa-${banIcon}"></i><div class="btn-spinner"></div></button>
           <button class="tbl-btn reset" title="Reset HWID" onclick="doResetHWID('${esc(u.username)}','${esc(u.appKey)}',this)"><i class="fa-solid fa-rotate"></i><div class="btn-spinner"></div></button>
           <button class="tbl-btn delete" title="Delete User" onclick="askDeleteUser('${esc(u.username)}','${esc(u.appKey)}','${esc(u.display)}')"><i class="fa-solid fa-trash"></i><div class="btn-spinner"></div></button>
         </div></td>
