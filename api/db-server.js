@@ -29,11 +29,13 @@ async function sb(method, table, { filter = '', body, single = false } = {}) {
   const res  = await fetch(url, opts);
   const text = await res.text();
   if (!res.ok) {
+    // PGRST116 = 0 rows when single=true — treat as not found, not an error
+    try {
+      const j = JSON.parse(text);
+      if (j.code === 'PGRST116') return null;
+    } catch(_) {}
     let msg = text;
     try { msg = JSON.parse(text).message || msg; } catch(_) {}
-    console.log('SUPABASE ERROR url:', url);
-    console.log('SUPABASE ERROR status:', res.status);
-    console.log('SUPABASE ERROR body:', text);
     throw new Error(msg);
   }
   if (!text) return single ? null : [];
@@ -452,3 +454,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: e.message });
   }
 }
+ 
