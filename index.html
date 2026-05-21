@@ -264,5 +264,85 @@
     navs.forEach(a=>{a.classList.toggle('active',a.getAttribute('href')==='#'+cur);});
   },{passive:true});
 </script>
+
+<!-- ANTI-INSPECT BLOCK: disables right-click, F12, and all common devtools shortcuts without modifying any existing code -->
+<script>
+  (function() {
+    // Block contextmenu (right-click)
+    document.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+      return false;
+    });
+
+    // Block all keyboard shortcuts that open devtools / view source / save
+    document.addEventListener('keydown', function(e) {
+      // F12
+      if (e.key === 'F12') {
+        e.preventDefault();
+        return false;
+      }
+      
+      // Ctrl+Shift+I / Ctrl+Shift+J / Ctrl+Shift+C (Windows/Linux)
+      // Also Cmd+Opt+I / Cmd+Opt+J / Cmd+Opt+C (Mac)
+      if ((e.ctrlKey && e.shiftKey) || (e.metaKey && e.altKey)) {
+        if (e.key === 'I' || e.key === 'J' || e.key === 'C') {
+          e.preventDefault();
+          return false;
+        }
+      }
+      
+      // Ctrl+U (View Source) Windows/Linux
+      if (e.ctrlKey && (e.key === 'U' || e.key === 'u')) {
+        e.preventDefault();
+        return false;
+      }
+      
+      // Cmd+U (View Source) Mac
+      if (e.metaKey && (e.key === 'U' || e.key === 'u')) {
+        e.preventDefault();
+        return false;
+      }
+      
+      // Ctrl+S (Save page) Windows/Linux
+      if (e.ctrlKey && (e.key === 'S' || e.key === 's')) {
+        e.preventDefault();
+        return false;
+      }
+      
+      // Cmd+S (Save page) Mac
+      if (e.metaKey && (e.key === 'S' || e.key === 's')) {
+        e.preventDefault();
+        return false;
+      }
+      
+      // Ctrl+Shift+K (Firefox console)
+      if (e.ctrlKey && e.shiftKey && (e.key === 'K' || e.key === 'k')) {
+        e.preventDefault();
+        return false;
+      }
+      
+      // Ctrl+E (Search / potential debug trigger)
+      if (e.ctrlKey && (e.key === 'E' || e.key === 'e')) {
+        e.preventDefault();
+        return false;
+      }
+      
+      // Additional guard for Ctrl+Shift+E (some devtools panels)
+      if (e.ctrlKey && e.shiftKey && (e.key === 'E' || e.key === 'e')) {
+        e.preventDefault();
+        return false;
+      }
+    });
+
+    // optional: block F12 using keyCode fallback (for older browsers)
+    window.addEventListener('keydown', function(e) {
+      if (e.keyCode === 123) {
+        e.preventDefault();
+        return false;
+      }
+    });
+  })();
+</script>
+
 </body>
 </html>
