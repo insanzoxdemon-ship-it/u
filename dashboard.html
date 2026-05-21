@@ -436,7 +436,7 @@
         <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-users"></i></div><div class="stat-change neutral">Live</div><div class="stat-val" id="ov-total">—</div><div class="stat-label">Total Users</div></div>
         <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div><div class="stat-change up">Active</div><div class="stat-val" id="ov-active">—</div><div class="stat-label">Active Users</div></div>
         <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-clock-rotate-left"></i></div><div class="stat-change neutral">Expired</div><div class="stat-val" id="ov-expired">—</div><div class="stat-label">Expired Users</div></div>
-        
+        <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-box-open"></i></div><div class="stat-change neutral">Assigned</div><div class="stat-val" id="ov-pkgs">—</div><div class="stat-label">Total Packages</div></div>
       </div>
       <div class="overview-grid">
         <div class="card"><div class="card-title"><i class="fa-solid fa-server"></i> App Status</div><div id="ov-app-status-rows"></div></div>
@@ -830,6 +830,7 @@ function askDeleteUser(username, appKey, display){
 // (Owner sets twoFAEnabled flag + clears totpSecret)
 // ═══════════════════════════════════════════
 async function toggle2FA(username, currentEnabled, toggleEl) {
+  if(currentRole!=='owner'){toast('Only owner can toggle 2FA.',true);toggleEl.checked=currentEnabled;return;}
   const newState=!currentEnabled;
   try {
     await AuthDB.accounts.set2FAEnabled(username, newState, currentUsername);
@@ -849,6 +850,7 @@ async function toggle2FA(username, currentEnabled, toggleEl) {
  
 // Reset another user's 2FA secret (force re-setup on next login)
 async function resetUser2FA(username) {
+  if(currentRole!=='owner'){toast('Only owner can reset 2FA.',true);return;}
   setEl('confirm-title','Reset 2FA');
   setEl('confirm-msg',`"${username}" will need to re-scan a new QR code on their next login.`);
   pendingConfirmFn=async()=>{
@@ -929,7 +931,15 @@ function updateStats(){
   setEl('ov-total',vis.length);
   setEl('ov-active',vis.filter(u=>!u.expired&&!u.banned).length);
   setEl('ov-expired',vis.filter(u=>u.expired).length);
- 
+  // Count total unique packages assigned across all subsellers + resellers
+  (async()=>{
+    try{
+      const [subs,ress]=await Promise.all([AuthDB.accounts.getByRole('subseller'),AuthDB.accounts.getByRole('reseller')]);
+      const pkgSet=new Set();
+      [...subs,...ress].forEach(p=>(p.packages||[]).forEach(k=>pkgSet.add(k)));
+      setEl('ov-pkgs', pkgSet.size > 0 ? pkgSet.size : myApps.length);
+    }catch(e){ setEl('ov-pkgs',myApps.length); }
+  })();
   myApps.forEach(k=>{const e=document.getElementById('cnt-'+k);if(e) e.textContent=vis.filter(u=>u.appKey===k).length;});
   renderDist();
 }
@@ -1107,6 +1117,7 @@ async function toggleSubSellerEnabled(username,currentlyEnabled,toggleEl){
   } catch(e){toast('Error: '+e.message,true);toggleEl.checked=currentlyEnabled;}
 }
 async function toggleSubSellerApiKey(username,currentState,toggleEl){
+  if(currentRole!=='owner'){toast('Only owner can toggle API access.',true);toggleEl.checked=currentState;return;}
   const newState=!currentState;
   try {
     await AuthDB.accounts.setApiEnabled(username,newState,currentUsername);
@@ -1138,14 +1149,17 @@ async function syncSubSellerList(){
     return `<div class="people-card ${isEnabled?'':'is-disabled'}">
       <div class="person-head"><div class="person-avatar av-sub">${esc((ss.username[0]||'?').toUpperCase())}</div><div><div class="person-name">${esc(ss.displayName||ss.username)}</div><div class="person-since">Since ${since}</div><span class="person-role-tag prt-sub"><i class="fa-solid fa-user-shield"></i> SubSeller</span></div></div>
       <div class="ss-enable-row">${enabledLabel}<label class="toggle-sw"><input type="checkbox" ${isEnabled?'checked':''} onchange="toggleSubSellerEnabled('${esc(ss.username)}',${isEnabled},this)"><span class="toggle-track"></span></label></div>
+      ${currentRole==='owner'?`
       <div class="api-onoff-row"><span class="api-onoff-label ${apiOn?'on':'off'}"><i class="fa-solid fa-plug"></i> API ${apiOn?'On':'Off'}</span><label class="toggle-sw"><input type="checkbox" ${apiOn?'checked':''} onchange="toggleSubSellerApiKey('${esc(ss.username)}',${apiOn},this)"><span class="toggle-track"></span></label></div>
       <div class="twofa-row">
         <span class="twofa-label ${is2FAOn?'on-lbl':'off-lbl'}"><i class="fa-solid fa-shield-halved"></i> 2FA ${is2FAOn?'Required':'Disabled'}</span>
         <div style="display:flex;align-items:center;gap:.4rem">
-          ${is2FAOn&&has2FASecret?`<button class="reset-2fa-btn" onclick="resetUser2FA('${esc(ss.username)}')"><i class="fa-solid fa-rotate"></i> Reset</button>`:''}
+          ${is2FAOn&&has2FASecret?'<button class="reset-2fa-btn" onclick="resetUser2FA(\''+esc(ss.username)+'\'"><i class="fa-solid fa-rotate"></i> Reset</button>':''}
           <label class="toggle-sw"><input type="checkbox" ${is2FAOn?'checked':''} onchange="toggle2FA('${esc(ss.username)}',${is2FAOn},this)"><span class="toggle-track"></span></label>
         </div>
-      </div>
+      </div>`:`
+      <div class="api-onoff-row"><span class="api-onoff-label ${apiOn?'on':'off'}"><i class="fa-solid fa-plug"></i> API ${apiOn?'On':'Off'}</span><span style="font-size:.62rem;color:rgba(255,255,255,0.2)">Owner only</span></div>
+      <div class="twofa-row"><span class="twofa-label ${is2FAOn?'on-lbl':'off-lbl'}"><i class="fa-solid fa-shield-halved"></i> 2FA ${is2FAOn?'Required':'Disabled'}</span><span style="font-size:.62rem;color:rgba(255,255,255,0.2)">Owner only</span></div>`}
       <div class="res-api-row" id="ss-api-key-row-${esc(ss.username)}" style="display:${apiOn?'flex':'none'}">
         <span class="res-api-label">API Key</span>
         <span class="res-api-value masked" id="ss-api-val-${esc(ss.username)}">●●●●●●●●●●●●●●●●●●●●</span>
@@ -1192,6 +1206,7 @@ async function submitAddSubSeller(){
 // RESELLERS
 // ═══════════════════════════════════════════
 async function toggleResellerApiKey(username,currentState,toggleEl){
+  if(currentRole!=='owner'){toast('Only owner can toggle API access.',true);toggleEl.checked=currentState;return;}
   const newState=!currentState;
   try {
     await AuthDB.accounts.setApiEnabled(username,newState,currentUsername);
@@ -1226,8 +1241,7 @@ async function syncResellerList(){
   try{allDbUsers=await AuthDB.appUsers.getAll();}catch(e){}
   const apiKeyMap={};
   for(const rs of list){
-    const canManage=currentRole==='owner'||(currentRole==='subseller'&&(rs.createdBy||'').toLowerCase()===currentUsername.toLowerCase());
-    if(canManage){try{apiKeyMap[rs.username]=await AuthDB.apiKeys.getOrCreate(rs.username);}catch(e){apiKeyMap[rs.username]='';}}
+    if(currentRole==='owner'){try{apiKeyMap[rs.username]=await AuthDB.apiKeys.getOrCreate(rs.username);}catch(e){apiKeyMap[rs.username]='';}}
   }
   const cards=await Promise.all(list.map(async rs=>{
     const pkgPills=myApps.map(k=>`<span class="pkg-pill ${(rs.packages||[]).includes(k)?'':'off'}">${APP_DISPLAY[k]}</span>`).join('');
@@ -1236,15 +1250,15 @@ async function syncResellerList(){
     const apiOn=rs.apiEnabled===true;
     const is2FAOn=rs.twoFAEnabled!==false;
     const has2FASecret=!!(await AuthDB.accounts.getTotpSecret(rs.username));
-    const canManage=currentRole==='owner'||(currentRole==='subseller'&&(rs.createdBy||'').toLowerCase()===currentUsername.toLowerCase());
+    const isOwnerManaged=currentRole==='owner';
     const apiKeyVal=apiKeyMap[rs.username]||'';
     const madeByBadge=`<div class="made-by-badge"><i class="fa-solid fa-user-shield"></i> Made by: <strong style="color:var(--purple);margin-left:.2rem">${esc(rs.createdBy||'Owner')}</strong></div>`;
-    const apiSection=canManage?`
+    const apiSection=isOwnerManaged?`
       <div class="api-onoff-row"><span class="api-onoff-label ${apiOn?'on':'off'}"><i class="fa-solid fa-plug"></i> API ${apiOn?'On':'Off'}</span><label class="toggle-sw"><input type="checkbox" ${apiOn?'checked':''} onchange="toggleResellerApiKey('${esc(rs.username)}',${apiOn},this)"><span class="toggle-track"></span></label></div>
       <div class="twofa-row">
         <span class="twofa-label ${is2FAOn?'on-lbl':'off-lbl'}"><i class="fa-solid fa-shield-halved"></i> 2FA ${is2FAOn?'Required':'Disabled'}</span>
         <div style="display:flex;align-items:center;gap:.4rem">
-          ${is2FAOn&&has2FASecret?`<button class="reset-2fa-btn" onclick="resetUser2FA('${esc(rs.username)}')"><i class="fa-solid fa-rotate"></i> Reset</button>`:''}
+          ${is2FAOn&&has2FASecret?'<button class="reset-2fa-btn" onclick="resetUser2FA(\''+esc(rs.username)+'\'"><i class="fa-solid fa-rotate"></i> Reset</button>':''}
           <label class="toggle-sw"><input type="checkbox" ${is2FAOn?'checked':''} onchange="toggle2FA('${esc(rs.username)}',${is2FAOn},this)"><span class="toggle-track"></span></label>
         </div>
       </div>
@@ -1254,7 +1268,8 @@ async function syncResellerList(){
         <button class="res-api-icon-btn" onclick="togglePersonApiKey('rs','${esc(rs.username)}','${esc(apiKeyVal)}')"><i class="fa-solid fa-eye" id="rs-api-eye-${esc(rs.username)}"></i></button>
         <button class="res-api-icon-btn" onclick="copyPersonApiKey('${esc(rs.username)}','${esc(apiKeyVal)}')"><i class="fa-solid fa-copy"></i></button>
       </div>`:
-      (apiOn?`<div class="api-onoff-row"><span class="api-onoff-label on"><i class="fa-solid fa-plug"></i> API On</span><span style="font-size:.62rem;color:rgba(255,255,255,0.2)">Managed by creator</span></div>`:'');
+      `<div class="api-onoff-row"><span class="api-onoff-label ${apiOn?'on':'off'}"><i class="fa-solid fa-plug"></i> API ${apiOn?'On':'Off'}</span><span style="font-size:.62rem;color:rgba(255,255,255,0.2)">Owner only</span></div>
+      <div class="twofa-row"><span class="twofa-label ${is2FAOn?'on-lbl':'off-lbl'}"><i class="fa-solid fa-shield-halved"></i> 2FA ${is2FAOn?'Required':'Disabled'}</span><span style="font-size:.62rem;color:rgba(255,255,255,0.2)">Owner only</span></div>`;
     return `<div class="people-card">
       <div class="person-head"><div class="person-avatar av-res">${esc((rs.username[0]||'?').toUpperCase())}</div><div><div class="person-name">${esc(rs.displayName||rs.username)}</div><div class="person-since">Since ${since}</div><span class="person-role-tag prt-res"><i class="fa-solid fa-users-gear"></i> Reseller</span></div></div>
       ${madeByBadge}${apiSection}
@@ -1547,4 +1562,4 @@ document.querySelectorAll('a,button,.stat-card,.pkg-card,.people-card').forEach(
 })();
 </script>
 </body>
-</html>
+</html
