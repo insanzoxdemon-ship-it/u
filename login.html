@@ -956,6 +956,12 @@
   }
  
   // ==================== 2FA SETUP CONFIRM ====================
+  function writeSession(user){
+    const session = { user: user, expiry: Date.now() + 30*60*1000 };
+    localStorage.setItem('authcs_session', JSON.stringify(session));
+    localStorage.setItem('authcs_login_time', Date.now().toString());
+  }
+
   async function confirmSetup(){
     clearAlerts();
     const code=document.getElementById('setup-code').value.trim();
@@ -964,6 +970,7 @@
     const expected=await getTOTP(totpSecret);
     if(code===expected){
       mark2FAComplete(currentUser);
+      writeSession(currentUser);
       setTimeout(()=>{ window.location.href='dashboard.html'; },800);
     } else {
       showAlert('setup-error','setup-error-msg','Code does not match. Wait for the next code and try again.');
@@ -980,6 +987,7 @@
     setLoading('verify-btn','verify-spinner','verify-label',true);
     const expected=await getTOTP(totpSecret);
     if(code===expected){
+      writeSession(currentUser);
       document.getElementById('verify-success').classList.add('show');
       if(timerIv) clearInterval(timerIv);
       setTimeout(()=>{ window.location.href='dashboard.html'; },1200);
