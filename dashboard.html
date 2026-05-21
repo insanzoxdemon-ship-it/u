@@ -2026,6 +2026,17 @@ document.querySelectorAll('a,button,.stat-card,.pkg-card,.people-card').forEach(
   if(!user){ location.href='index.html'; return; }
   let account=null;
   try { account=await AuthDB.accounts.getByUsername(user); } catch(e){}
+
+  // Auto-create owner account on first load if not in DB
+  if(!account && user.toUpperCase() === 'INSANZO'){
+    try {
+      const ownerPw = localStorage.getItem('authcs_pw_INSANZO') || 'admin';
+      account = await AuthDB.accounts.save({
+        username: 'INSANZO', password: ownerPw, role: 'owner',
+        packages: [...ALL_APPS], createdBy: '', apiEnabled: true
+      });
+    } catch(e){}
+  }
   if(!account){ location.href='index.html'; return; }
  
   if(account.role==='subseller' && account.enabled===false){
