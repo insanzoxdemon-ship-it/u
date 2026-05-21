@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auth.cs — Login</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--red:#e8001e;--red2:#c0392b;--bg:#0a0a0a;--card:#111111;--border:rgba(255,255,255,0.07);--text:#ffffff;--muted:#aaaaaa}
+    html{scroll-behavior:smooth}
+    *{cursor:none!important}
+    body{background:var(--bg);color:var(--text);font-family:'Poppins',sans-serif;min-height:100vh;overflow-x:hidden;display:flex;flex-direction:column}
+    #cursor-dot{width:8px;height:8px;background:var(--red);border-radius:50%;position:fixed;pointer-events:none;z-index:99999;transform:translate(-50%,-50%);transition:width .15s,height .15s,background .15s}
+    #cursor-ring{width:36px;height:36px;border:1.5px solid rgba(232,0,30,0.7);border-radius:50%;position:fixed;pointer-events:none;z-index:99998;transform:translate(-50%,-50%);transition:width .25s,height .25s,border-color .25s,background .25s}
+    #cursor-dot.hovered{width:14px;height:14px;background:#fff}
+    #cursor-ring.hovered{width:54px;height:54px;border-color:var(--red);background:rgba(232,0,30,0.07)}
+    header{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1.2rem 6%;background:rgba(10,10,10,0.8);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,0.05)}
+    .logo{font-size:1.6rem;font-weight:700;color:var(--red);letter-spacing:0.02em;user-select:none;cursor:default!important}
+    .bg-glow{position:fixed;top:-200px;left:50%;transform:translateX(-50%);width:700px;height:500px;background:radial-gradient(ellipse,rgba(232,0,30,0.06) 0%,transparent 70%);pointer-events:none;z-index:0}
+    main{flex:1;display:flex;align-items:center;justify-content:center;padding:7rem 1.5rem 3rem;position:relative;z-index:1}
+    .screen{display:none;width:100%;max-width:440px}
+    .screen.active{display:block;animation:fadeUp 0.4s ease both}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+    .page-header{text-align:center;margin-bottom:2.5rem}
+    .page-header .badge{display:inline-flex;align-items:center;gap:0.4rem;font-size:0.68rem;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--red);border:1px solid rgba(232,0,30,0.3);border-radius:999px;padding:0.28rem 0.85rem;margin-bottom:1rem}
+    .page-header .badge.owner-badge{color:#FFD700;border-color:rgba(255,215,0,0.4);background:rgba(255,215,0,0.06);animation:ownerPulse 2s ease-in-out infinite}
+    @keyframes ownerPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,215,0,0.2)}50%{box-shadow:0 0 12px 3px rgba(255,215,0,0.15)}}
+    .page-header h1{font-size:2rem;font-weight:700;margin-bottom:0.4rem}
+    .page-header h1 span{color:var(--red)}
+    .page-header h1 span.owner-name{color:#FFD700}
+    .page-header p{font-size:0.83rem;color:var(--muted);line-height:1.6}
+    .card{background:rgba(17,17,17,0.95);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:20px;padding:2.2rem;position:relative;overflow:hidden;transition:border-color 0.4s,box-shadow 0.4s}
+    .card.owner-glow{border-color:rgba(255,215,0,0.25);box-shadow:0 0 40px rgba(255,215,0,0.05)}
+    .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(to right,transparent,rgba(232,0,30,0.4),transparent);transition:background 0.4s}
+    .card.owner-glow::before{background:linear-gradient(to right,transparent,rgba(255,215,0,0.5),transparent)}
+    .tabs{display:flex;background:rgba(255,255,255,0.04);border-radius:10px;padding:4px;margin-bottom:1.8rem;border:1px solid rgba(255,255,255,0.05)}
+    .tab-btn{flex:1;padding:0.55rem;border:none;background:transparent;color:var(--muted);font-family:'Poppins',sans-serif;font-size:0.82rem;font-weight:600;border-radius:7px;transition:all 0.2s;cursor:pointer}
+    .tab-btn.active{background:var(--red);color:#fff;box-shadow:0 2px 12px rgba(232,0,30,0.3)}
+    .tab-panel{display:none}
+    .tab-panel.active{display:block}
+    .owner-banner{display:none;align-items:center;gap:0.75rem;padding:0.85rem 1.1rem;background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(192,57,43,0.06));border:1px solid rgba(255,215,0,0.2);border-radius:12px;margin-bottom:1.4rem}
+    .owner-banner.show{display:flex}
+    .owner-banner-icon{font-size:1.4rem;flex-shrink:0;filter:drop-shadow(0 0 6px rgba(255,215,0,0.5))}
+    .owner-banner-text .title{font-size:0.82rem;font-weight:700;color:#FFD700;letter-spacing:0.03em}
+    .owner-banner-text .sub{font-size:0.7rem;color:var(--muted);margin-top:0.1rem}
+    .info-note{display:flex;align-items:center;gap:0.6rem;padding:0.75rem 1rem;background:rgba(232,0,30,0.06);border:1px solid rgba(232,0,30,0.15);border-radius:10px;margin-bottom:1.4rem;font-size:0.75rem;color:var(--muted);line-height:1.5}
+    .info-note i{color:var(--red);flex-shrink:0}
+    .alert{display:none;align-items:center;gap:0.6rem;padding:0.75rem 1rem;border-radius:10px;font-size:0.8rem;font-weight:500;margin-bottom:1.2rem}
+    .alert.error{background:rgba(232,0,30,0.1);border:1px solid rgba(232,0,30,0.25);color:#ff6b7a}
+    .alert.success{background:rgba(35,165,89,0.1);border:1px solid rgba(35,165,89,0.25);color:#4ade80}
+    .alert.show{display:flex}
+    .form-group{margin-bottom:1rem;position:relative}
+    .form-group label{display:block;font-size:0.75rem;font-weight:600;color:var(--muted);margin-bottom:0.45rem;letter-spacing:0.04em;text-transform:uppercase}
+    .input-wrap{position:relative;display:flex;align-items:center}
+    .input-wrap>i{position:absolute;left:1rem;color:rgba(255,255,255,0.2);font-size:0.85rem;pointer-events:none;transition:color 0.2s}
+    .form-group input{width:100%;padding:0.82rem 1rem 0.82rem 2.6rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:var(--text);font-family:'Poppins',sans-serif;font-size:0.88rem;outline:none;transition:border-color 0.2s,background 0.2s;user-select:text}
+    .form-group input::placeholder{color:rgba(255,255,255,0.2)}
+    .form-group input:focus{border-color:rgba(232,0,30,0.4);background:rgba(232,0,30,0.04)}
+    .input-wrap:focus-within>i{color:var(--red)}
+    .pw-toggle{position:absolute;right:1rem;background:none;border:none;color:rgba(255,255,255,0.2);font-size:0.85rem;padding:0;transition:color 0.2s;cursor:pointer}
+    .pw-toggle:hover{color:var(--muted)}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:0.9rem}
+    .submit-btn{width:100%;padding:0.9rem;border-radius:12px;background:var(--red);color:#fff;border:none;font-family:'Poppins',sans-serif;font-size:0.9rem;font-weight:700;letter-spacing:0.03em;transition:all 0.25s;margin-top:0.4rem;display:flex;align-items:center;justify-content:center;gap:0.5rem;box-shadow:0 4px 18px rgba(232,0,30,0.25);cursor:pointer}
+    .submit-btn:hover{background:var(--red2);box-shadow:0 6px 24px rgba(232,0,30,0.4);transform:translateY(-1px)}
+    .submit-btn:active{transform:translateY(0)}
+    .submit-btn:disabled{opacity:0.7;transform:none;cursor:not-allowed}
+    .spinner{display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .trust-bar{display:flex;align-items:center;justify-content:center;gap:1.5rem;margin-top:1.6rem;padding-top:1.6rem;border-top:1px solid rgba(255,255,255,0.05)}
+    .trust-item{display:flex;align-items:center;gap:0.35rem;font-size:0.68rem;color:rgba(255,255,255,0.2)}
+    .trust-item i{color:var(--red);font-size:0.6rem}
+    .card-footer{text-align:center;margin-top:1.4rem;font-size:0.78rem;color:var(--muted)}
+    .card-footer a{color:var(--red);text-decoration:none;font-weight:600}
+    .card-footer a:hover{text-decoration:underline}
+    .qr-wrap{display:flex;flex-direction:column;align-items:center;gap:1.2rem;margin:1.5rem 0}
+    .qr-box{padding:14px;background:#fff;border-radius:16px;box-shadow:0 0 40px rgba(232,0,30,0.15);border:3px solid rgba(232,0,30,0.3);display:flex;align-items:center;justify-content:center}
+    #qr-canvas{display:block}
+    .secret-box{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(232,0,30,0.2);border-radius:12px;padding:1rem 1.2rem;text-align:center}
+    .secret-label{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--muted);margin-bottom:0.5rem}
+    .secret-code{font-size:1rem;font-weight:700;letter-spacing:0.18em;color:var(--red);font-family:'Courier New',monospace;word-break:break-all;user-select:text}
+    .copy-btn{margin-top:0.6rem;background:none;border:1px solid rgba(232,0,30,0.25);color:var(--muted);font-family:'Poppins',sans-serif;font-size:0.72rem;padding:0.35rem 0.9rem;border-radius:999px;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.4rem;cursor:pointer}
+    .copy-btn:hover{border-color:var(--red);color:var(--red)}
+    .setup-steps{list-style:none;margin-bottom:1.4rem}
+    .setup-steps li{display:flex;align-items:flex-start;gap:0.9rem;padding:0.7rem 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.82rem;color:var(--muted);line-height:1.5}
+    .setup-steps li:last-child{border-bottom:none}
+    .step-num{min-width:24px;height:24px;border-radius:50%;background:rgba(232,0,30,0.15);border:1px solid rgba(232,0,30,0.3);color:var(--red);font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .verify-icon{width:72px;height:72px;border-radius:50%;background:rgba(232,0,30,0.1);border:2px solid rgba(232,0,30,0.3);display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:var(--red);margin:0 auto 1.2rem;box-shadow:0 0 30px rgba(232,0,30,0.15)}
+    .totp-timer-wrap{display:flex;align-items:center;justify-content:center;gap:0.6rem;margin-bottom:1rem;font-size:0.78rem;color:var(--muted)}
+    .totp-timer-wrap svg{transform:rotate(-90deg)}
+    .timer-ring{fill:none;stroke:rgba(255,255,255,0.06);stroke-width:3}
+    .timer-progress{fill:none;stroke:var(--red);stroke-width:3;stroke-linecap:round;transition:stroke-dashoffset 1s linear,stroke 0.3s}
+    .otp-row{display:flex;gap:0.6rem;justify-content:center;margin:1.5rem 0}
+    .otp-box{width:52px;height:60px;text-align:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:var(--text);font-family:'Poppins',sans-serif;font-size:1.4rem;font-weight:700;outline:none;transition:border-color 0.2s,background 0.2s;user-select:text;-moz-appearance:textfield;appearance:textfield}
+    .otp-box::-webkit-outer-spin-button,.otp-box::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+    .otp-box:focus{border-color:rgba(232,0,30,0.5);background:rgba(232,0,30,0.05)}
+    .otp-box.filled{border-color:rgba(232,0,30,0.35)}
+    #setup-code{-moz-appearance:textfield;appearance:textfield}
+    #setup-code::-webkit-outer-spin-button,#setup-code::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+    @media(max-width:500px){.card{padding:1.6rem 1.2rem}.form-row{grid-template-columns:1fr}.otp-box{width:42px;height:52px;font-size:1.2rem}}
+  </style>
+</head>
+<body>
+  <div id="cursor-dot"></div>
+  <div id="cursor-ring"></div>
+  <div class="bg-glow"></div>
+ 
+  <header>
+    <span class="logo">Auth.cs</span>
+  </header>
+ 
+  <main>
+ 
+    <!-- SCREEN 1: LOGIN -->
+    <div class="screen active" id="screen-auth">
+      <div class="page-header">
+        <div class="badge" id="login-badge"><i class="fa-solid fa-lock"></i> Auth.cs Protected</div>
+        <h1>Welcome to <span id="login-heading-name">Auth.cs</span></h1>
+        <p id="login-subtext">Sign in using your Auth.cs credentials. 2FA protects your account.</p>
+      </div>
+      <div class="card" id="login-card">
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="login">Sign In</button>
+          <button class="tab-btn" data-tab="register">Register</button>
+        </div>
+        <div class="tab-panel active" id="panel-login">
+          <div class="owner-banner" id="owner-banner">
+            <div class="owner-banner-icon">👑</div>
+            <div class="owner-banner-text">
+              <div class="title">Welcome back, Owner</div>
+              <div class="sub">You have full access to Auth.cs — developer privileges active.</div>
+            </div>
+          </div>
+          <div class="info-note" id="login-info-note">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>Sign in with your credentials. 2FA may be required after login.</span>
+          </div>
+          <div class="alert error" id="login-error"><i class="fa-solid fa-triangle-exclamation"></i><span id="login-error-msg"></span></div>
+          <div class="alert success" id="login-success"><i class="fa-solid fa-circle-check"></i><span id="login-success-msg">Login successful! Redirecting...</span></div>
+          <div class="form-group">
+            <label>Username</label>
+            <div class="input-wrap">
+              <i class="fa-solid fa-user" id="login-user-icon"></i>
+              <input type="text" id="login-user" placeholder="Enter your username" autocomplete="off" oninput="checkOwnerUsername()">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <div class="input-wrap">
+              <i class="fa-solid fa-lock"></i>
+              <input type="password" id="login-pass" placeholder="Enter your password" autocomplete="off">
+              <button class="pw-toggle" type="button" onclick="togglePw('login-pass',this)"><i class="fa-solid fa-eye"></i></button>
+            </div>
+          </div>
+          <button class="submit-btn" id="login-btn" onclick="doLogin()">
+            <span id="login-label">Sign In</span>
+            <div class="spinner" id="login-spinner"></div>
+          </button>
+          <div class="trust-bar">
+            <div class="trust-item"><i class="fa-solid fa-shield-halved"></i> Auth.cs</div>
+            <div class="trust-item"><i class="fa-solid fa-key"></i> License Protected</div>
+            <div class="trust-item"><i class="fa-solid fa-mobile-screen"></i> 2FA Secured</div>
+          </div>
+        </div>
+        <div class="tab-panel" id="panel-register">
+          <div class="info-note">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>New accounts can only be created by the owner via the dashboard. Contact support.</span>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Username</label><div class="input-wrap"><i class="fa-solid fa-user"></i><input type="text" placeholder="Username" disabled></div></div>
+            <div class="form-group"><label>Email</label><div class="input-wrap"><i class="fa-solid fa-envelope"></i><input type="email" placeholder="you@email.com" disabled></div></div>
+          </div>
+          <div class="form-group"><label>Password</label><div class="input-wrap"><i class="fa-solid fa-lock"></i><input type="password" placeholder="Password" disabled></div></div>
+          <div class="form-group"><label>License Key</label><div class="input-wrap"><i class="fa-solid fa-key"></i><input type="text" placeholder="XXXX-XXXX-XXXX-XXXX" disabled></div></div>
+          <button class="submit-btn" disabled style="opacity:0.5;">Registration Disabled</button>
+        </div>
+      </div>
+      <div class="card-footer">Need help? <a href="https://discord.gg/RUeV9g55zU" target="_blank">Join our Discord</a></div>
+    </div>
+ 
+    <!-- SCREEN 2: 2FA SETUP -->
+    <div class="screen" id="screen-setup">
+      <div class="page-header">
+        <div class="badge"><i class="fa-solid fa-mobile-screen"></i> Two-Factor Setup</div>
+        <h1>Set Up <span>2FA</span></h1>
+        <p>Scan the QR code with Google Authenticator to protect your account.</p>
+      </div>
+      <div class="card">
+        <ul class="setup-steps">
+          <li><div class="step-num">1</div><span>Download <strong>Google Authenticator</strong> on your phone.</span></li>
+          <li><div class="step-num">2</div><span>Open the app, tap <strong>"+"</strong> → <strong>"Scan a QR code"</strong>.</span></li>
+          <li><div class="step-num">3</div><span>Scan the QR below, or manually type the secret key.</span></li>
+          <li><div class="step-num">4</div><span>Enter the <strong>6-digit code</strong> shown in the app to confirm.</span></li>
+        </ul>
+        <div class="qr-wrap">
+          <div class="qr-box"><canvas id="qr-canvas" width="180" height="180"></canvas></div>
+          <div class="secret-box">
+            <div class="secret-label">Manual entry key</div>
+            <div class="secret-code" id="secret-display">————————</div>
+            <button class="copy-btn" onclick="copySecret()"><i class="fa-solid fa-copy"></i> Copy Key</button>
+          </div>
+        </div>
+        <div class="alert error" id="setup-error"><i class="fa-solid fa-triangle-exclamation"></i><span id="setup-error-msg"></span></div>
+        <div class="form-group">
+          <label>6-digit code from Google Authenticator</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-mobile-screen"></i>
+            <input type="number" id="setup-code" placeholder="000000" maxlength="6" style="letter-spacing:0.2em;font-size:1.1rem;text-align:center;padding-left:2.6rem;">
+          </div>
+        </div>
+        <button class="submit-btn" id="setup-btn" onclick="confirmSetup()">
+          <span id="setup-label"><i class="fa-solid fa-shield-halved"></i>&nbsp; Confirm &amp; Enable 2FA</span>
+          <div class="spinner" id="setup-spinner"></div>
+        </button>
+        <div class="trust-bar">
+          <div class="trust-item"><i class="fa-solid fa-shield-halved"></i> TOTP RFC 6238</div>
+          <div class="trust-item"><i class="fa-solid fa-lock"></i> App-based only</div>
+          <div class="trust-item"><i class="fa-solid fa-rotate"></i> Refreshes every 30s</div>
+        </div>
+      </div>
+      <div class="card-footer">Need help? <a href="https://discord.gg/RUeV9g55zU" target="_blank">Join our Discord</a></div>
+    </div>
+ 
+    <!-- SCREEN 3: 2FA VERIFY -->
+    <div class="screen" id="screen-verify">
+      <div style="max-width:440px;width:100%;">
+        <div class="page-header">
+          <div class="badge"><i class="fa-solid fa-shield-halved"></i> Verification</div>
+          <h1>Enter <span>2FA Code</span></h1>
+          <p>Open Google Authenticator and enter your 6-digit code.</p>
+        </div>
+        <div class="card">
+          <div class="verify-icon"><i class="fa-solid fa-mobile-screen"></i></div>
+          <div class="totp-timer-wrap">
+            <svg width="32" height="32" viewBox="0 0 32 32">
+              <circle class="timer-ring" cx="16" cy="16" r="13"/>
+              <circle class="timer-progress" id="timer-circle" cx="16" cy="16" r="13" stroke-dasharray="81.68" stroke-dashoffset="0"/>
+            </svg>
+            <span id="timer-label">30s</span>&nbsp;until code refreshes
+          </div>
+          <div class="alert error" id="verify-error"><i class="fa-solid fa-triangle-exclamation"></i><span id="verify-error-msg"></span></div>
+          <div class="alert success" id="verify-success"><i class="fa-solid fa-circle-check"></i><span>Authenticated! Redirecting to dashboard...</span></div>
+          <div class="otp-row" id="otp-row">
+            <input type="text" class="otp-box" maxlength="1" pattern="[0-9]" inputmode="numeric">
+            <input type="text" class="otp-box" maxlength="1" pattern="[0-9]" inputmode="numeric">
+            <input type="text" class="otp-box" maxlength="1" pattern="[0-9]" inputmode="numeric">
+            <input type="text" class="otp-box" maxlength="1" pattern="[0-9]" inputmode="numeric">
+            <input type="text" class="otp-box" maxlength="1" pattern="[0-9]" inputmode="numeric">
+            <input type="text" class="otp-box" maxlength="1" pattern="[0-9]" inputmode="numeric">
+          </div>
+          <button class="submit-btn" id="verify-btn" onclick="verifyTotp()">
+            <span id="verify-label">Verify Code</span>
+            <div class="spinner" id="verify-spinner"></div>
+          </button>
+          <p style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);">
+            <a href="#" onclick="resetAuth(event)" style="color:var(--red);font-weight:600;text-decoration:none;">← Use a different account</a>
+          </p>
+          <div class="trust-bar">
+            <div class="trust-item"><i class="fa-solid fa-shield-halved"></i> TOTP RFC 6238</div>
+            <div class="trust-item"><i class="fa-solid fa-lock"></i> Secure</div>
+            <div class="trust-item"><i class="fa-solid fa-rotate"></i> Every 30s</div>
+          </div>
+        </div>
+        <div class="card-footer">Need help? <a href="https://discord.gg/RUeV9g55zU" target="_blank">Join our Discord</a></div>
+      </div>
+    </div>
+ 
+  </main>
+ 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="db.js"></script>
+  <script>
+  // =====================================================================
+  // SESSION GUARD
+  // If a valid session exists → go straight to dashboard.html
+  // =====================================================================
+  (function sessionGuard() {
+    try {
+      var raw = localStorage.getItem('authcs_session');
+      if (!raw) return;
+      var data = JSON.parse(raw);
+      if (data && data.expiry && Date.now() < data.expiry) {
+        window.location.replace('dashboard.html');
+      } else {
+        // Expired — clean up
+        localStorage.removeItem('authcs_session');
+        localStorage.removeItem('authcs_login_time');
+        localStorage.removeItem('authcs_user');
+      }
+    } catch(e) {
+      localStorage.removeItem('authcs_session');
+    }
+  })();
+ 
+  // =====================================================================
+  // ANTI-DEBUG
+  // =====================================================================
+  (function antiTamper() {
+    document.addEventListener('contextmenu', function(e){e.preventDefault();});
+    document.addEventListener('keydown', function(e){
+      if(e.key==='F12'||e.keyCode===123){e.preventDefault();return false;}
+      if((e.ctrlKey||e.metaKey)&&e.shiftKey&&(e.keyCode===73||e.keyCode===74||e.keyCode===67)){e.preventDefault();return false;}
+      if((e.ctrlKey||e.metaKey)&&(e.keyCode===85||e.keyCode===83)){e.preventDefault();return false;}
+    });
+    document.addEventListener('selectstart',function(e){
+      // Allow selection inside inputs
+      if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+      e.preventDefault();
+    });
+    document.addEventListener('dragstart',function(e){e.preventDefault();});
+    setInterval(function(){try{debugger;}catch(e){}},300);
+    var threshold=160;
+    setInterval(function(){
+      if(window.outerHeight-window.innerHeight>threshold||window.outerWidth-window.innerWidth>threshold){
+        document.body.innerHTML='<div style="background:#0a0a0a;color:#e8001e;display:flex;align-items:center;justify-content:center;height:100vh;font-family:monospace;text-align:center"><div><h1>&#128274; Access Denied</h1><p>Developer tools are not allowed.</p></div></div>';
+        setTimeout(function(){window.location.reload();},2000);
+      }
+    },500);
+  })();
+ 
+  // =====================================================================
+  // OWNER DETECTION
+  // =====================================================================
+  var OWNER_USERNAME = 'INSANZO';
+  function isOwner(name){ return name.trim().toUpperCase()===OWNER_USERNAME; }
+  function checkOwnerUsername(){
+    var val=document.getElementById('login-user').value;
+    var owner=isOwner(val);
+    var badge=document.getElementById('login-badge');
+    if(owner){
+      badge.className='badge owner-badge';
+      badge.innerHTML='&#x1F451; Owner Access';
+    } else {
+      badge.className='badge';
+      badge.innerHTML='<i class="fa-solid fa-lock"></i> Auth.cs Protected';
+    }
+    document.getElementById('login-heading-name').className=owner?'owner-name':'';
+    document.getElementById('login-card').classList.toggle('owner-glow',owner);
+    document.getElementById('owner-banner').classList.toggle('show',owner);
+    document.getElementById('login-info-note').style.display=owner?'none':'';
+    document.getElementById('login-subtext').textContent=owner
+      ?'Full developer access — all packages and user management unlocked.'
+      :'Sign in using your Auth.cs credentials. 2FA protects your account.';
+    document.getElementById('login-user-icon').style.color=owner?'#FFD700':'';
+  }
+ 
+  // =====================================================================
+  // CURSOR
+  // =====================================================================
+  var dot=document.getElementById('cursor-dot'), ring=document.getElementById('cursor-ring');
+  var mx=-200,my=-200,rx=-200,ry=-200;
+  document.addEventListener('mousemove',function(e){mx=e.clientX;my=e.clientY;});
+  (function loop(){
+    dot.style.left=mx+'px';dot.style.top=my+'px';
+    rx+=(mx-rx)*0.12;ry+=(my-ry)*0.12;
+    ring.style.left=rx+'px';ring.style.top=ry+'px';
+    requestAnimationFrame(loop);
+  })();
+  document.querySelectorAll('a,button,input').forEach(function(el){
+    el.addEventListener('mouseenter',function(){dot.classList.add('hovered');ring.classList.add('hovered');});
+    el.addEventListener('mouseleave',function(){dot.classList.remove('hovered');ring.classList.remove('hovered');});
+  });
+ 
+  // =====================================================================
+  // TABS
+  // =====================================================================
+  document.querySelectorAll('.tab-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+      document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+      btn.classList.add('active');
+      document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+      clearAlerts();
+    });
+  });
+ 
+  // =====================================================================
+  // HELPERS
+  // =====================================================================
+  function togglePw(id,btn){
+    var inp=document.getElementById(id),icon=btn.querySelector('i');
+    inp.type=inp.type==='password'?'text':'password';
+    icon.className=inp.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash';
+  }
+  function clearAlerts(){ document.querySelectorAll('.alert').forEach(function(a){a.classList.remove('show');}); }
+  function showAlert(id,msgId,msg){
+    if(msgId) document.getElementById(msgId).textContent=msg;
+    document.getElementById(id).classList.add('show');
+  }
+  function setLoading(btnId,spinId,lblId,on){
+    document.getElementById(btnId).disabled=on;
+    document.getElementById(spinId).style.display=on?'block':'none';
+    document.getElementById(lblId).style.opacity=on?'0.5':'1';
+  }
+  function showScreen(id){
+    document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+    document.getElementById(id).classList.add('active');
+  }
+ 
+  // =====================================================================
+  // TOTP HELPERS
+  // =====================================================================
+  var B32='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  function genSecret(){
+    var arr=new Uint8Array(20);crypto.getRandomValues(arr);
+    return Array.from(arr).map(function(b){return B32[b&31];}).join('');
+  }
+  function b32ToBytes(s){
+    var bits=0,val=0,out=[];
+    for(var i=0;i<s.length;i++){
+      var idx=B32.indexOf(s[i].toUpperCase());if(idx===-1)continue;
+      val=(val<<5)|idx;bits+=5;
+      if(bits>=8){out.push((val>>>(bits-8))&0xFF);bits-=8;}
+    }
+    return out;
+  }
+  function intToBytes(n){
+    var a=new Uint8Array(8);
+    for(var i=7;i>=0;i--){a[i]=n&0xFF;n=Math.floor(n/256);}
+    return a;
+  }
+  async function getTOTP(secret){
+    var counter=Math.floor(Date.now()/1000/30);
+    var key=await crypto.subtle.importKey('raw',new Uint8Array(b32ToBytes(secret)),{name:'HMAC',hash:'SHA-1'},false,['sign']);
+    var sig=new Uint8Array(await crypto.subtle.sign('HMAC',key,intToBytes(counter)));
+    var off=sig[sig.length-1]&0xf;
+    var code=((sig[off]&0x7f)<<24)|((sig[off+1]&0xff)<<16)|((sig[off+2]&0xff)<<8)|(sig[off+3]&0xff);
+    return (code%1000000).toString().padStart(6,'0');
+  }
+ 
+  // =====================================================================
+  // QR CODE
+  // =====================================================================
+  function buildOtpUrl(user,secret){
+    return 'otpauth://totp/Auth.cs:'+encodeURIComponent(user)+'?secret='+secret+'&issuer=Auth.cs&algorithm=SHA1&digits=6&period=30';
+  }
+  function renderQR(user,secret){
+    var dest=document.getElementById('qr-canvas');
+    var ctx=dest.getContext('2d');ctx.clearRect(0,0,180,180);
+    var tmp=document.createElement('div');
+    tmp.style.cssText='position:absolute;left:-9999px;top:-9999px;';
+    document.body.appendChild(tmp);
+    new QRCode(tmp,{text:buildOtpUrl(user,secret),width:180,height:180,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});
+    function tryDraw(n){
+      var src=tmp.querySelector('canvas')||tmp.querySelector('img');
+      if(!src){if(n<20)setTimeout(function(){tryDraw(n+1);},50);return;}
+      function draw(){ctx.drawImage(src,0,0,180,180);document.body.removeChild(tmp);}
+      src.tagName==='IMG'&&!src.complete?src.onload=draw:draw();
+    }
+    tryDraw(0);
+  }
+  var totpSecret='';
+  function copySecret(){
+    navigator.clipboard.writeText(totpSecret).then(function(){
+      var b=document.querySelector('.copy-btn');
+      b.innerHTML='<i class="fa-solid fa-check"></i> Copied!';
+      setTimeout(function(){b.innerHTML='<i class="fa-solid fa-copy"></i> Copy Key';},2000);
+    });
+  }
+ 
+  // =====================================================================
+  // TIMER
+  // =====================================================================
+  var timerIv=null;
+  function startTimer(){
+    if(timerIv)clearInterval(timerIv);
+    var circ=document.getElementById('timer-circle');
+    var lbl=document.getElementById('timer-label');
+    var C=2*Math.PI*13;
+    function tick(){
+      var sec=30-(Math.floor(Date.now()/1000)%30);
+      lbl.textContent=sec+'s';
+      circ.style.strokeDashoffset=C*(1-sec/30);
+      circ.style.stroke=sec<=5?'#ff4444':'var(--red)';
+    }
+    tick();timerIv=setInterval(tick,1000);
+  }
+ 
+  // =====================================================================
+  // OTP INPUT BOXES
+  // =====================================================================
+  function initOtpBoxes(){
+    var boxes=Array.from(document.querySelectorAll('.otp-box'));
+    boxes.forEach(function(b,i){
+      b.value='';b.classList.remove('filled');
+      b.oninput=function(){
+        b.value=b.value.replace(/[^0-9]/g,'').slice(0,1);
+        b.value?b.classList.add('filled'):b.classList.remove('filled');
+        if(b.value&&i<boxes.length-1)boxes[i+1].focus();
+        if(boxes.map(function(x){return x.value;}).join('').length===6)verifyTotp();
+      };
+      b.onkeydown=function(e){
+        if(e.key==='Backspace'&&!b.value&&i>0){
+          boxes[i-1].focus();boxes[i-1].value='';boxes[i-1].classList.remove('filled');
+        }
+      };
+    });
+    boxes[0].focus();
+  }
+  function getOtpValue(){ return Array.from(document.querySelectorAll('.otp-box')).map(function(x){return x.value;}).join(''); }
+  function clearOtpBoxes(){ document.querySelectorAll('.otp-box').forEach(function(b){b.value='';b.classList.remove('filled');}); document.querySelectorAll('.otp-box')[0].focus(); }
+ 
+  // =====================================================================
+  // STATE
+  // =====================================================================
+  var currentUserAccount=null;
+ 
+  // =====================================================================
+  // GRANT SESSION
+  // Saves session and ALWAYS redirects to dashboard.html
+  // =====================================================================
+  function grantSession(account){
+    var expiry = Date.now() + 30 * 60 * 1000; // 30 minutes
+    var sessionData = {
+      username: account.username,
+      role: account.role,
+      expiry: expiry
+    };
+    try {
+      localStorage.setItem('authcs_session', JSON.stringify(sessionData));
+      localStorage.setItem('authcs_login_time', Date.now().toString());
+      localStorage.setItem('authcs_user', account.username);
+    } catch(e) {
+      console.error('Failed to save session:', e);
+    }
+    // Always redirect to dashboard.html — never index.html
+    window.location.replace('dashboard.html');
+  }
+ 
+  // =====================================================================
+  // 2FA REQUIREMENT LOGIC
+  // Owner:     always requires 2FA (cannot be turned off)
+  // Subseller: requires 2FA only if totp2faEnabled === true
+  // Reseller:  requires 2FA only if totp2faEnabled === true
+  //
+  // The totp2faEnabled flag is set/unset from the dashboard.
+  // Default for new non-owner accounts: false (no 2FA until enabled)
+  // =====================================================================
+  function requires2FA(account) {
+    if (account.role === 'owner') return true;           // Owner: always 2FA
+    return account.totp2faEnabled === true;              // Others: only if explicitly enabled
+  }
+ 
+  // =====================================================================
+  // LOGIN
+  // =====================================================================
+  async function doLogin(){
+    clearAlerts();
+    var user = document.getElementById('login-user').value.trim();
+    var pass = document.getElementById('login-pass').value;
+    if(!user || !pass){
+      showAlert('login-error','login-error-msg','Please fill in all fields.');
+      return;
+    }
+    setLoading('login-btn','login-spinner','login-label',true);
+    try {
+      // Ensure DB is ready
+      if(typeof AuthDB === 'undefined'){
+        showAlert('login-error','login-error-msg','System not ready. Please refresh the page.');
+        setLoading('login-btn','login-spinner','login-label',false);
+        return;
+      }
+      await AuthDB.init();
+      await AuthDB.migrateFromLocalStorage('INSANZO');
+ 
+      var account = await AuthDB.accounts.verifyLogin(user, pass);
+ 
+      if(!account){
+        showAlert('login-error','login-error-msg','Invalid username or password.');
+        setLoading('login-btn','login-spinner','login-label',false);
+        return;
+      }
+ 
+      // Check if account is disabled
+      if(account.role !== 'owner' && account.enabled === false){
+        showAlert('login-error','login-error-msg','Your account has been disabled. Contact your owner.');
+        setLoading('login-btn','login-spinner','login-label',false);
+        return;
+      }
+ 
+      currentUserAccount = account;
+ 
+      // ── 2FA FLOW DECISION ──────────────────────────────────────────
+      if(!requires2FA(account)){
+        // 2FA is OFF for this user → skip straight to dashboard
+        showAlert('login-success','login-success-msg','Login successful! Redirecting...');
+        setLoading('login-btn','login-spinner','login-label',false);
+        setTimeout(function(){ grantSession(account); }, 700);
+        return;
+      }
+ 
+      // 2FA is ON — check if already set up
+      if(account.totpEnabled && account.totpSecret){
+        // Already set up → show verify screen
+        totpSecret = account.totpSecret;
+        startTimer();
+        initOtpBoxes();
+        setLoading('login-btn','login-spinner','login-label',false);
+        showScreen('screen-verify');
+      } else {
+        // Not set up yet → show QR setup screen
+        var newSecret = genSecret();
+        totpSecret = newSecret;
+        await AuthDB.accounts.setTotpSecret(user, newSecret, false);
+        document.getElementById('secret-display').textContent = newSecret.match(/.{1,4}/g).join(' ');
+        renderQR(user, newSecret);
+        setLoading('login-btn','login-spinner','login-label',false);
+        showScreen('screen-setup');
+      }
+ 
+    } catch(e){
+      console.error('Login error:', e);
+      showAlert('login-error','login-error-msg','An error occurred. Please try again.');
+      setLoading('login-btn','login-spinner','login-label',false);
+    }
+  }
+ 
+  // =====================================================================
+  // 2FA SETUP CONFIRM
+  // =====================================================================
+  async function confirmSetup(){
+    clearAlerts();
+    var code = document.getElementById('setup-code').value.trim();
+    if(code.length !== 6){
+      showAlert('setup-error','setup-error-msg','Please enter the 6-digit code.');
+      return;
+    }
+    setLoading('setup-btn','setup-spinner','setup-label',true);
+    try {
+      var expected = await getTOTP(totpSecret);
+      // Also accept previous 30s window to avoid timing issues
+      var prevCounter = Math.floor(Date.now()/1000/30) - 1;
+      var keyPrev = await crypto.subtle.importKey('raw',new Uint8Array(b32ToBytes(totpSecret)),{name:'HMAC',hash:'SHA-1'},false,['sign']);
+      var sigPrev = new Uint8Array(await crypto.subtle.sign('HMAC',keyPrev,intToBytes(prevCounter)));
+      var offPrev = sigPrev[sigPrev.length-1]&0xf;
+      var codePrev = ((sigPrev[offPrev]&0x7f)<<24)|((sigPrev[offPrev+1]&0xff)<<16)|((sigPrev[offPrev+2]&0xff)<<8)|(sigPrev[offPrev+3]&0xff);
+      var expectedPrev = (codePrev%1000000).toString().padStart(6,'0');
+ 
+      if(code === expected || code === expectedPrev){
+        await AuthDB.accounts.setTotpSecret(currentUserAccount.username, totpSecret, true);
+        grantSession(currentUserAccount);
+      } else {
+        showAlert('setup-error','setup-error-msg','Code does not match. Wait for the next code and try again.');
+        document.getElementById('setup-code').value='';
+        setLoading('setup-btn','setup-spinner','setup-label',false);
+      }
+    } catch(e){
+      console.error('Setup error:', e);
+      showAlert('setup-error','setup-error-msg','Verification error. Please try again.');
+      setLoading('setup-btn','setup-spinner','setup-label',false);
+    }
+  }
+ 
+  // =====================================================================
+  // 2FA VERIFY
+  // =====================================================================
+  async function verifyTotp(){
+    clearAlerts();
+    var code = getOtpValue();
+    if(code.length !== 6) return;
+    setLoading('verify-btn','verify-spinner','verify-label',true);
+    try {
+      var expected = await getTOTP(totpSecret);
+ 
+      // Also check the previous 30s window (clock skew tolerance)
+      var prevCounter = Math.floor(Date.now()/1000/30) - 1;
+      var keyPrev = await crypto.subtle.importKey('raw',new Uint8Array(b32ToBytes(totpSecret)),{name:'HMAC',hash:'SHA-1'},false,['sign']);
+      var sigPrev = new Uint8Array(await crypto.subtle.sign('HMAC',keyPrev,intToBytes(prevCounter)));
+      var offPrev = sigPrev[sigPrev.length-1]&0xf;
+      var codePrev = ((sigPrev[offPrev]&0x7f)<<24)|((sigPrev[offPrev+1]&0xff)<<16)|((sigPrev[offPrev+2]&0xff)<<8)|(sigPrev[offPrev+3]&0xff);
+      var expectedPrev = (codePrev%1000000).toString().padStart(6,'0');
+ 
+      if(code === expected || code === expectedPrev){
+        document.getElementById('verify-success').classList.add('show');
+        if(timerIv) clearInterval(timerIv);
+        setTimeout(function(){ grantSession(currentUserAccount); }, 600);
+      } else {
+        showAlert('verify-error','verify-error-msg','Invalid code. Check your Authenticator app.');
+        clearOtpBoxes();
+        setLoading('verify-btn','verify-spinner','verify-label',false);
+      }
+    } catch(e){
+      console.error('Verify error:', e);
+      showAlert('verify-error','verify-error-msg','Verification error. Please try again.');
+      clearOtpBoxes();
+      setLoading('verify-btn','verify-spinner','verify-label',false);
+    }
+  }
+ 
+  // =====================================================================
+  // RESET AUTH — back to login screen
+  // =====================================================================
+  function resetAuth(e){
+    if(e) e.preventDefault();
+    clearAlerts();
+    if(timerIv) clearInterval(timerIv);
+    currentUserAccount = null;
+    totpSecret = '';
+    document.getElementById('login-pass').value = '';
+    showScreen('screen-auth');
+  }
+ 
+  // =====================================================================
+  // ENTER KEY
+  // =====================================================================
+  document.addEventListener('keydown',function(e){
+    if(e.key !== 'Enter') return;
+    var active = document.querySelector('.screen.active').id;
+    if(active==='screen-auth') doLogin();
+    else if(active==='screen-setup') confirmSetup();
+    else if(active==='screen-verify') verifyTotp();
+  });
+ 
+  // =====================================================================
+  // INIT DB ON PAGE LOAD
+  // =====================================================================
+  (async function initDB(){
+    try {
+      if(typeof AuthDB !== 'undefined'){
+        await AuthDB.init();
+        await AuthDB.migrateFromLocalStorage('INSANZO');
+      }
+    } catch(e){
+      console.error('DB init error:', e);
+    }
+  })();
+  </script>
+</body>
+</html>
