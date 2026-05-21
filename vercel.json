@@ -12,7 +12,7 @@
   "rewrites": [
     {
       "source": "/api/db-server/:path*",
-      "destination": "/api/db-server"
+      "destination": "/api/db-server?_path=:path*"
     },
     {
       "source": "/api/login",
