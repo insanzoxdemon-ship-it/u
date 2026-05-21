@@ -8,368 +8,274 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <style>
-    /* ========== YOUR EXISTING CSS (unchanged) ========== */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root { --red: #e8001e; --red2: #c0392b; --bg: #0a0a0a; --text: #ffffff; --muted: #aaaaaa; }
-    html { scroll-behavior: smooth; }
-    body { background: var(--bg); color: var(--text); font-family: 'Poppins', sans-serif; min-height: 100vh; overflow-x: hidden; }
-    * { cursor: none !important; }
-    #cursor-dot { width: 8px; height: 8px; background: var(--red); border-radius: 50%; position: fixed; pointer-events: none; z-index: 99999; transform: translate(-50%, -50%); transition: width 0.15s, height 0.15s, background 0.15s; }
-    #cursor-ring { width: 36px; height: 36px; border: 1.5px solid rgba(232,0,30,0.7); border-radius: 50%; position: fixed; pointer-events: none; z-index: 99998; transform: translate(-50%, -50%); transition: width 0.25s, height 0.25s, border-color 0.25s, background 0.25s; }
-    #cursor-dot.hovered { width: 14px; height: 14px; background: #fff; }
-    #cursor-ring.hovered { width: 54px; height: 54px; border-color: var(--red); background: rgba(232,0,30,0.07); }
-    header { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 1.2rem 6%; background: transparent; transition: background 0.35s, box-shadow 0.35s, padding 0.35s; }
-    header.scrolled { background: rgba(10,10,10,0.88); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 1px 0 rgba(232,0,30,0.15); padding: 0.75rem 6%; }
-    .logo { font-size: 1.6rem; font-weight: 700; color: var(--red); text-decoration: none; letter-spacing: 0.02em; transform: translateY(-56px); opacity: 0; transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease; display: inline-block; }
-    header.scrolled .logo { transform: translateY(0); opacity: 1; }
-    footer .logo { transform: none !important; opacity: 1 !important; transition: none !important; }
-    nav { display: flex; gap: 2rem; }
-    nav a { color: var(--text); text-decoration: none; font-size: 0.95rem; font-weight: 500; position: relative; transition: color 0.2s; }
-    nav a::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 2px; background: var(--red); transition: width 0.3s; }
-    nav a:hover { color: var(--text); }
-    nav a.active::after, nav a:hover::after { width: 100%; }
-    nav a.active { border-bottom: 2px solid var(--red); padding-bottom: 2px; }
-    .home { min-height: 100vh; display: flex; align-items: center; padding: 0 6%; gap: 4rem; position: relative; overflow: hidden; }
-    .home::before { content: ''; position: absolute; top: -200px; left: -100px; width: 600px; height: 600px; background: radial-gradient(circle, rgba(232,0,30,0.07) 0%, transparent 70%); pointer-events: none; }
-    .home-img { flex-shrink: 0; width: 380px; height: 380px; position: relative; }
-    .home-img::before { content: ''; position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 50% 40%, #cc0000 0%, #7a0000 60%, #2a0000 100%); box-shadow: 0 0 80px rgba(200,0,0,0.4), 0 0 160px rgba(150,0,0,0.15); }
-    .home-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center top; border-radius: 50%; }
-    .home-img::after { content: ''; position: absolute; inset: -3px; border-radius: 50%; border: 1.5px solid rgba(232,0,30,0.3); box-shadow: 0 0 30px rgba(232,0,30,0.2); }
-    .home-content { flex: 1; max-width: 620px; }
-    .home-content h1 { font-size: 3.2rem; font-weight: 700; line-height: 1.15; margin-bottom: 0.3rem; }
-    .home-content h1 span { color: var(--red); }
-    .typing-text { font-size: 2rem; font-weight: 600; margin-bottom: 1.2rem; min-height: 2.5rem; }
-    .typing-text span { color: var(--red); border-right: 3px solid var(--red); padding-right: 3px; animation: blink 0.7s step-end infinite; }
-    @keyframes blink { 0%,100% { border-color: var(--red); } 50% { border-color: transparent; } }
-    .home-content p { font-size: 0.95rem; font-weight: 300; color: var(--muted); line-height: 1.75; margin-bottom: 1.8rem; max-width: 540px; }
-    .stats { display: flex; gap: 2.5rem; margin-bottom: 1.8rem; }
-    .stat-item .num { font-size: 1.6rem; font-weight: 700; color: var(--red); display: block; line-height: 1; }
-    .stat-item .label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 0.2rem; }
-    .stat-divider { width: 1px; background: rgba(255,255,255,0.1); align-self: stretch; }
-    .social-icons { display: flex; gap: 0.9rem; margin-bottom: 1.8rem; }
-    .social-icons a { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; color: var(--text); font-size: 0.95rem; text-decoration: none; transition: border-color 0.25s, color 0.25s, background 0.25s, transform 0.2s; }
-    .social-icons a:hover { border-color: var(--red); color: var(--red); background: rgba(232,0,30,0.08); transform: translateY(-2px); }
-    .btn-group { display: flex; gap: 1rem; align-items: center; }
-    .btn { display: inline-block; padding: 0.75rem 2rem; border-radius: 999px; font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: all 0.25s; }
-    .btn-primary { background: transparent; color: var(--text); border: 2px solid var(--red); }
-    .btn-primary:hover { background: var(--red); color: #fff; box-shadow: 0 0 20px rgba(232,0,30,0.35); }
-    .btn-secondary { background: var(--red); color: #fff; border: 2px solid var(--red); }
-    .btn-secondary:hover { background: transparent; color: var(--red); }
-    .features-strip { position: absolute; bottom: 2.5rem; left: 6%; right: 6%; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
-    .feature-pill { display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 1rem; border: 1px solid rgba(232,0,30,0.2); border-radius: 999px; background: rgba(232,0,30,0.05); font-size: 0.72rem; color: var(--muted); font-weight: 500; letter-spacing: 0.03em; }
-    .feature-pill i { color: var(--red); font-size: 0.75rem; }
-    .scroll-hint { position: absolute; bottom: 2rem; right: 6%; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.2); }
-    .scroll-hint .line { width: 1px; height: 40px; background: linear-gradient(to bottom, var(--red), transparent); animation: scrollline 1.5s ease-in-out infinite; }
-    @keyframes scrollline { 0% { transform: scaleY(0); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform: scaleY(1); transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
-    .home-img { animation: fadeLeft 0.9s ease both; }
-    .home-content { animation: fadeRight 0.9s 0.15s ease both; }
-    @keyframes fadeLeft { from { opacity:0; transform: translateX(-40px); } to { opacity:1; transform: translateX(0); } }
-    @keyframes fadeRight { from { opacity:0; transform: translateX(40px); } to { opacity:1; transform: translateX(0); } }
-    .page-section { padding: 7rem 6%; position: relative; }
-    .section-tag { display: inline-block; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); border: 1px solid rgba(232,0,30,0.3); border-radius: 999px; padding: 0.3rem 0.9rem; margin-bottom: 0.9rem; }
-    .section-title { font-size: 2.5rem; font-weight: 700; line-height: 1.2; margin-bottom: 0.6rem; }
-    .section-title span { color: var(--red); }
-    .section-sub { font-size: 0.9rem; color: var(--muted); max-width: 520px; line-height: 1.75; margin-bottom: 3.5rem; }
-    .sep { width: 100%; height: 1px; background: linear-gradient(to right, rgba(232,0,30,0.3), transparent); }
-    #features { background: #0a0a0a; }
-    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
-    .feat-card { border: 1px solid rgba(232,0,30,0.12); border-radius: 16px; padding: 2rem; background: rgba(232,0,30,0.03); transition: border-color 0.3s, background 0.3s, transform 0.3s; position: relative; overflow: hidden; }
-    .feat-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: linear-gradient(to right, var(--red), transparent); opacity: 0; transition: opacity 0.3s; }
-    .feat-card:hover { border-color: rgba(232,0,30,0.35); background: rgba(232,0,30,0.06); transform: translateY(-4px); }
-    .feat-card:hover::before { opacity: 1; }
-    .feat-icon { width: 48px; height: 48px; border-radius: 12px; background: rgba(232,0,30,0.1); border: 1px solid rgba(232,0,30,0.2); display: flex; align-items: center; justify-content: center; color: var(--red); font-size: 1.2rem; margin-bottom: 1.2rem; }
-    .feat-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
-    .feat-card p { font-size: 0.82rem; color: var(--muted); line-height: 1.7; }
-    #pricing { background: #080808; }
-    .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; align-items: start; }
-    .price-card { border: 1px solid rgba(255,255,255,0.07); border-radius: 20px; padding: 2.2rem; background: rgba(255,255,255,0.02); position: relative; transition: transform 0.3s, border-color 0.3s; }
-    .price-card:hover { transform: translateY(-6px); border-color: rgba(232,0,30,0.25); }
-    .price-card.popular { border-color: var(--red); background: rgba(232,0,30,0.05); transform: scale(1.03); }
-    .price-card.popular:hover { transform: scale(1.03) translateY(-6px); }
-    .popular-badge { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: var(--red); color: #fff; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.3rem 1rem; border-radius: 999px; }
-    .plan-name { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; }
-    .plan-price { font-size: 2.8rem; font-weight: 800; line-height: 1; color: var(--text); margin-bottom: 0.3rem; }
-    .plan-price sup { font-size: 1.2rem; font-weight: 600; vertical-align: super; color: var(--red); }
-    .plan-period { font-size: 0.78rem; color: var(--muted); margin-bottom: 1.8rem; }
-    .plan-features { list-style: none; margin-bottom: 2rem; }
-    .plan-features li { font-size: 0.83rem; color: var(--muted); padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; align-items: center; gap: 0.6rem; }
-    .plan-features li i { color: var(--red); font-size: 0.7rem; flex-shrink: 0; }
-    .plan-features li.off { opacity: 0.35; }
-    .plan-features li.off i { color: var(--muted); }
-    .plan-btn { display: block; text-align: center; padding: 0.75rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600; text-decoration: none; border: 1.5px solid var(--red); color: var(--text); background: transparent; transition: all 0.25s; }
-    .plan-btn:hover, .price-card.popular .plan-btn { background: var(--red); color: #fff; box-shadow: 0 0 20px rgba(232,0,30,0.3); }
-    .price-card.popular .plan-btn:hover { background: transparent; color: var(--red); }
-    #contact { background: #0a0a0a; }
-    .contact-inner { display: flex; gap: 4rem; align-items: flex-start; }
-    .contact-left { flex: 1; }
-    .contact-right { flex-shrink: 0; width: 380px; }
-    .discord-card { border: 1px solid rgba(88,101,242,0.3); border-radius: 20px; padding: 2.5rem; background: rgba(88,101,242,0.05); text-align: center; transition: border-color 0.3s, transform 0.3s; }
-    .discord-card:hover { border-color: rgba(88,101,242,0.6); transform: translateY(-4px); }
-    .discord-logo { width: 72px; height: 72px; background: #5865f2; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: #fff; margin: 0 auto 1.4rem; box-shadow: 0 0 30px rgba(88,101,242,0.35); }
-    .discord-card h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; }
-    .discord-card p { font-size: 0.83rem; color: var(--muted); line-height: 1.7; margin-bottom: 1.8rem; }
-    .discord-btn { display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.85rem 2rem; border-radius: 999px; background: #5865f2; color: #fff; font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: all 0.25s; box-shadow: 0 4px 20px rgba(88,101,242,0.3); }
-    .discord-btn:hover { background: #4752c4; transform: scale(1.04); box-shadow: 0 6px 28px rgba(88,101,242,0.45); }
-    .discord-members { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 1.2rem; font-size: 0.75rem; color: var(--muted); }
-    .discord-members span.dot { width: 7px; height: 7px; border-radius: 50%; background: #23a559; display: inline-block; }
-    .contact-info { display: flex; flex-direction: column; gap: 1.5rem; }
-    .contact-item { display: flex; align-items: flex-start; gap: 1rem; padding: 1.4rem; border: 1px solid rgba(232,0,30,0.1); border-radius: 14px; background: rgba(232,0,30,0.03); transition: border-color 0.3s; }
-    .contact-item:hover { border-color: rgba(232,0,30,0.3); }
-    .contact-item-icon { width: 42px; height: 42px; border-radius: 10px; background: rgba(232,0,30,0.1); border: 1px solid rgba(232,0,30,0.2); display: flex; align-items: center; justify-content: center; color: var(--red); font-size: 1rem; flex-shrink: 0; }
-    .contact-item h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.2rem; }
-    .contact-item p { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
-    footer { padding: 2rem 6%; border-top: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between; }
-    footer p { font-size: 0.75rem; color: var(--muted); }
-    @media (max-width: 1000px) { .features-grid { grid-template-columns: repeat(2, 1fr); } .pricing-grid { grid-template-columns: 1fr; gap: 2rem; } .price-card.popular { transform: none; } .contact-inner { flex-direction: column; } .contact-right { width: 100%; } }
-    @media (max-width: 700px) { .home { flex-direction: column; padding-top: 6rem; text-align: center; gap: 2rem; } .home-img { width: 260px; height: 260px; } .home-content h1 { font-size: 2.2rem; } .typing-text { font-size: 1.4rem; } .social-icons { justify-content: center; } .btn-group { justify-content: center; } .stats { justify-content: center; } nav { gap: 1rem; } .features-strip { flex-wrap: wrap; bottom: 1rem; } .scroll-hint { display: none; } .features-grid { grid-template-columns: 1fr; } .section-title { font-size: 1.8rem; } footer { flex-direction: column; gap: 1rem; text-align: center; } }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--red:#e8001e;--red2:#c0392b;--bg:#0a0a0a;--text:#ffffff;--muted:#aaaaaa}
+    html{scroll-behavior:smooth}
+    body{background:var(--bg);color:var(--text);font-family:'Poppins',sans-serif;min-height:100vh;overflow-x:hidden}
+    *{cursor:none!important}
+    #cursor-dot{width:8px;height:8px;background:var(--red);border-radius:50%;position:fixed;pointer-events:none;z-index:99999;transform:translate(-50%,-50%);transition:width .15s,height .15s,background .15s}
+    #cursor-ring{width:36px;height:36px;border:1.5px solid rgba(232,0,30,0.7);border-radius:50%;position:fixed;pointer-events:none;z-index:99998;transform:translate(-50%,-50%);transition:width .25s,height .25s}
+    #cursor-dot.hovered{width:14px;height:14px;background:#fff}
+    #cursor-ring.hovered{width:54px;height:54px;border-color:var(--red);background:rgba(232,0,30,0.07)}
+    header{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1.2rem 6%;background:transparent;transition:background .35s,box-shadow .35s,padding .35s}
+    header.scrolled{background:rgba(10,10,10,0.88);backdrop-filter:blur(16px);box-shadow:0 1px 0 rgba(232,0,30,0.15);padding:.75rem 6%}
+    .logo{font-size:1.6rem;font-weight:700;color:var(--red);text-decoration:none;letter-spacing:.02em}
+    nav{display:flex;gap:2rem}
+    nav a{color:var(--text);text-decoration:none;font-size:.95rem;font-weight:500;position:relative;transition:color .2s}
+    nav a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:2px;background:var(--red);transition:width .3s}
+    nav a:hover::after,nav a.active::after{width:100%}
+    .home{min-height:100vh;display:flex;align-items:center;padding:0 6%;gap:4rem;position:relative;overflow:hidden}
+    .home::before{content:'';position:absolute;top:-200px;left:-100px;width:600px;height:600px;background:radial-gradient(circle,rgba(232,0,30,0.07) 0%,transparent 70%);pointer-events:none}
+    .home-img{flex-shrink:0;width:380px;height:380px;position:relative}
+    .home-img::before{content:'';position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 50% 40%,#cc0000 0%,#7a0000 60%,#2a0000 100%);box-shadow:0 0 80px rgba(200,0,0,0.4)}
+    .home-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;border-radius:50%}
+    .home-img::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:1.5px solid rgba(232,0,30,0.3);box-shadow:0 0 30px rgba(232,0,30,0.2)}
+    .home-content{flex:1;max-width:620px}
+    .home-content h1{font-size:3.2rem;font-weight:700;line-height:1.15;margin-bottom:.3rem}
+    .home-content h1 span{color:var(--red)}
+    .typing-text{font-size:2rem;font-weight:600;margin-bottom:1.2rem;min-height:2.5rem}
+    .typing-text span{color:var(--red);border-right:3px solid var(--red);padding-right:3px;animation:blink .7s step-end infinite}
+    @keyframes blink{0%,100%{border-color:var(--red)}50%{border-color:transparent}}
+    .home-content p{font-size:.95rem;font-weight:300;color:var(--muted);line-height:1.75;margin-bottom:1.8rem;max-width:540px}
+    .stats{display:flex;gap:2.5rem;margin-bottom:1.8rem}
+    .stat-item .num{font-size:1.6rem;font-weight:700;color:var(--red);display:block;line-height:1}
+    .stat-item .label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:.2rem}
+    .stat-divider{width:1px;background:rgba(255,255,255,0.1);align-self:stretch}
+    .social-icons{display:flex;gap:.9rem;margin-bottom:1.8rem}
+    .social-icons a{width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;color:var(--text);font-size:.95rem;text-decoration:none;transition:all .25s}
+    .social-icons a:hover{border-color:var(--red);color:var(--red);background:rgba(232,0,30,0.08);transform:translateY(-2px)}
+    .btn-group{display:flex;gap:1rem;align-items:center}
+    .btn{display:inline-block;padding:.75rem 2rem;border-radius:999px;font-size:.9rem;font-weight:600;text-decoration:none;transition:all .25s}
+    .btn-primary{background:transparent;color:var(--text);border:2px solid var(--red)}
+    .btn-primary:hover{background:var(--red);color:#fff;box-shadow:0 0 20px rgba(232,0,30,0.35)}
+    .btn-secondary{background:var(--red);color:#fff;border:2px solid var(--red)}
+    .btn-secondary:hover{background:transparent;color:var(--red)}
+    .features-strip{position:absolute;bottom:2.5rem;left:6%;right:6%;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+    .feature-pill{display:flex;align-items:center;gap:.5rem;padding:.45rem 1rem;border:1px solid rgba(232,0,30,0.2);border-radius:999px;background:rgba(232,0,30,0.05);font-size:.72rem;color:var(--muted);font-weight:500;letter-spacing:.03em}
+    .feature-pill i{color:var(--red);font-size:.75rem}
+    .scroll-hint{position:absolute;bottom:2rem;right:6%;display:flex;flex-direction:column;align-items:center;gap:.3rem;font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,0.2)}
+    .scroll-hint .line{width:1px;height:40px;background:linear-gradient(to bottom,var(--red),transparent);animation:scrollline 1.5s ease-in-out infinite}
+    @keyframes scrollline{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+    .home-img{animation:fadeLeft .9s ease both}
+    .home-content{animation:fadeRight .9s .15s ease both}
+    @keyframes fadeLeft{from{opacity:0;transform:translateX(-40px)}to{opacity:1;transform:translateX(0)}}
+    @keyframes fadeRight{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+    .page-section{padding:7rem 6%;position:relative}
+    .section-tag{display:inline-block;font-size:.7rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--red);border:1px solid rgba(232,0,30,0.3);border-radius:999px;padding:.3rem .9rem;margin-bottom:.9rem}
+    .section-title{font-size:2.5rem;font-weight:700;line-height:1.2;margin-bottom:.6rem}
+    .section-title span{color:var(--red)}
+    .section-sub{font-size:.9rem;color:var(--muted);max-width:520px;line-height:1.75;margin-bottom:3.5rem}
+    .sep{width:100%;height:1px;background:linear-gradient(to right,rgba(232,0,30,0.3),transparent)}
+    #features{background:#0a0a0a}
+    .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem}
+    .feat-card{border:1px solid rgba(232,0,30,0.12);border-radius:16px;padding:2rem;background:rgba(232,0,30,0.03);transition:border-color .3s,background .3s,transform .3s;position:relative;overflow:hidden}
+    .feat-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:linear-gradient(to right,var(--red),transparent);opacity:0;transition:opacity .3s}
+    .feat-card:hover{border-color:rgba(232,0,30,0.35);background:rgba(232,0,30,0.06);transform:translateY(-4px)}
+    .feat-card:hover::before{opacity:1}
+    .feat-icon{width:48px;height:48px;border-radius:12px;background:rgba(232,0,30,0.1);border:1px solid rgba(232,0,30,0.2);display:flex;align-items:center;justify-content:center;color:var(--red);font-size:1.2rem;margin-bottom:1.2rem}
+    .feat-card h3{font-size:1rem;font-weight:600;margin-bottom:.5rem}
+    .feat-card p{font-size:.82rem;color:var(--muted);line-height:1.7}
+    #pricing{background:#080808}
+    .pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;align-items:start}
+    .price-card{border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:2.2rem;background:rgba(255,255,255,0.02);position:relative;transition:transform .3s,border-color .3s}
+    .price-card:hover{transform:translateY(-6px);border-color:rgba(232,0,30,0.25)}
+    .price-card.popular{border-color:var(--red);background:rgba(232,0,30,0.05);transform:scale(1.03)}
+    .popular-badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--red);color:#fff;font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.3rem 1rem;border-radius:999px}
+    .plan-name{font-size:.75rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem}
+    .plan-price{font-size:2.8rem;font-weight:800;line-height:1;margin-bottom:.3rem}
+    .plan-price sup{font-size:1.2rem;font-weight:600;vertical-align:super;color:var(--red)}
+    .plan-period{font-size:.78rem;color:var(--muted);margin-bottom:1.8rem}
+    .plan-features{list-style:none;margin-bottom:2rem}
+    .plan-features li{font-size:.83rem;color:var(--muted);padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;gap:.6rem}
+    .plan-features li i{color:var(--red);font-size:.7rem;flex-shrink:0}
+    .plan-features li.off{opacity:.35}
+    .plan-btn{display:block;text-align:center;padding:.75rem;border-radius:999px;font-size:.85rem;font-weight:600;text-decoration:none;border:1.5px solid var(--red);color:var(--text);background:transparent;transition:all .25s}
+    .plan-btn:hover,.price-card.popular .plan-btn{background:var(--red);color:#fff;box-shadow:0 0 20px rgba(232,0,30,0.3)}
+    #contact{background:#0a0a0a}
+    .contact-inner{display:flex;gap:4rem;align-items:flex-start}
+    .contact-left{flex:1}
+    .contact-right{flex-shrink:0;width:380px}
+    .discord-card{border:1px solid rgba(88,101,242,0.3);border-radius:20px;padding:2.5rem;background:rgba(88,101,242,0.05);text-align:center;transition:border-color .3s,transform .3s}
+    .discord-card:hover{border-color:rgba(88,101,242,0.6);transform:translateY(-4px)}
+    .discord-logo{width:72px;height:72px;background:#5865f2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;color:#fff;margin:0 auto 1.4rem;box-shadow:0 0 30px rgba(88,101,242,0.35)}
+    .discord-card h3{font-size:1.15rem;font-weight:700;margin-bottom:.5rem}
+    .discord-card p{font-size:.83rem;color:var(--muted);line-height:1.7;margin-bottom:1.8rem}
+    .discord-btn{display:inline-flex;align-items:center;gap:.6rem;padding:.85rem 2rem;border-radius:999px;background:#5865f2;color:#fff;font-size:.9rem;font-weight:600;text-decoration:none;transition:all .25s;box-shadow:0 4px 20px rgba(88,101,242,0.3)}
+    .discord-btn:hover{background:#4752c4;transform:scale(1.04)}
+    .contact-info{display:flex;flex-direction:column;gap:1.5rem}
+    .contact-item{display:flex;align-items:flex-start;gap:1rem;padding:1.4rem;border:1px solid rgba(232,0,30,0.1);border-radius:14px;background:rgba(232,0,30,0.03);transition:border-color .3s}
+    .contact-item:hover{border-color:rgba(232,0,30,0.3)}
+    .contact-item-icon{width:42px;height:42px;border-radius:10px;background:rgba(232,0,30,0.1);border:1px solid rgba(232,0,30,0.2);display:flex;align-items:center;justify-content:center;color:var(--red);font-size:1rem;flex-shrink:0}
+    .contact-item h4{font-size:.85rem;font-weight:600;margin-bottom:.2rem}
+    .contact-item p{font-size:.78rem;color:var(--muted);line-height:1.5}
+    footer{padding:2rem 6%;border-top:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between}
+    footer p{font-size:.75rem;color:var(--muted)}
+    @media(max-width:1000px){.features-grid{grid-template-columns:repeat(2,1fr)}.pricing-grid{grid-template-columns:1fr}.contact-inner{flex-direction:column}.contact-right{width:100%}}
+    @media(max-width:700px){.home{flex-direction:column;padding-top:6rem;text-align:center;gap:2rem}.home-img{width:260px;height:260px}.home-content h1{font-size:2.2rem}.typing-text{font-size:1.4rem}.social-icons{justify-content:center}.btn-group{justify-content:center}.stats{justify-content:center}nav{gap:1rem}.features-grid{grid-template-columns:1fr}.section-title{font-size:1.8rem}footer{flex-direction:column;gap:1rem;text-align:center}}
   </style>
 </head>
 <body>
- 
-  <div id="cursor-dot"></div>
-  <div id="cursor-ring"></div>
- 
-  <header id="site-header">
-    <a href="#home" class="logo">Auth.cs</a>
-    <nav>
-      <a href="#home" class="active">Home</a>
-      <a href="#features">Features</a>
-      <a href="#pricing">Pricing</a>
-      <a href="#contact">Contact</a>
-    </nav>
-  </header>
- 
-  <section class="home" id="home">
-    <div class="home-img">
-      <img src="main.jpg" alt="Auth.cs">
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+
+<header id="site-header">
+  <a href="#home" class="logo">Auth.cs</a>
+  <nav>
+    <a href="#home" class="active">Home</a>
+    <a href="#features">Features</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#contact">Contact</a>
+  </nav>
+</header>
+
+<section class="home" id="home">
+  <div class="home-img"><img src="main.jpg" alt="Auth.cs"></div>
+  <div class="home-content">
+    <h1>Hi, It's <span>Auth.cs</span></h1>
+    <h3 class="typing-text">We handle <span id="typed"></span></h3>
+    <p>Auth.cs is a powerful license management system that lets you create users, generate secure keys, and protect your applications — all in one clean dashboard.</p>
+    <div class="stats">
+      <div class="stat-item"><span class="num">100%</span><span class="label">Secure</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat-item"><span class="num">HWID</span><span class="label">Lock</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat-item"><span class="num">API</span><span class="label">Powered</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat-item"><span class="num">24/7</span><span class="label">Uptime</span></div>
     </div>
- 
-    <div class="home-content">
-      <h1>Hi, It's <span>Auth.cs</span></h1>
-      <h3 class="typing-text">We handle <span id="typed"></span></h3>
-      <p>Auth.cs is a powerful license management system that lets you create users, generate secure keys, and protect your applications — all in one clean dashboard. Built for developers who want full control.</p>
- 
-      <div class="stats">
-        <div class="stat-item"><span class="num">100%</span><span class="label">Secure</span></div>
-        <div class="stat-divider"></div>
-        <div class="stat-item"><span class="num">HWID</span><span class="label">Lock</span></div>
-        <div class="stat-divider"></div>
-        <div class="stat-item"><span class="num">API</span><span class="label">Powered</span></div>
-        <div class="stat-divider"></div>
-        <div class="stat-item"><span class="num">24/7</span><span class="label">Uptime</span></div>
-      </div>
- 
-      <div class="social-icons">
-        <a href="https://discord.gg/RUeV9g55zU" target="_blank" title="Discord"><i class="fa-brands fa-discord"></i></a>
-        <a href="https://instagram.com/YOUR_HANDLE" target="_blank" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
-        <a href="https://github.com/YOUR_HANDLE" target="_blank" title="GitHub"><i class="fa-brands fa-github"></i></a>
-        <a href="https://x.com/YOUR_HANDLE" target="_blank" title="Twitter / X"><i class="fa-brands fa-x-twitter"></i></a>
-        <a href="https://t.me/YOUR_HANDLE" target="_blank" title="Telegram"><i class="fa-brands fa-telegram"></i></a>
-      </div>
- 
-      <div class="btn-group">
-        <a href="#" id="btn-get-started" class="btn btn-primary">Get Started</a>
-        <a href="#" id="btn-dashboard" class="btn btn-secondary">View Dashboard</a>
-      </div>
+    <div class="social-icons">
+      <a href="https://discord.gg/RUeV9g55zU" target="_blank"><i class="fa-brands fa-discord"></i></a>
+      <a href="#"><i class="fa-brands fa-instagram"></i></a>
+      <a href="#"><i class="fa-brands fa-github"></i></a>
+      <a href="#"><i class="fa-brands fa-x-twitter"></i></a>
     </div>
- 
-    <div class="features-strip">
-      <div class="feature-pill"><i class="fa-solid fa-key"></i> Key Generation</div>
-      <div class="feature-pill"><i class="fa-solid fa-user-shield"></i> User Management</div>
-      <div class="feature-pill"><i class="fa-solid fa-fingerprint"></i> HWID Binding</div>
-      <div class="feature-pill"><i class="fa-solid fa-clock"></i> Expiry Control</div>
-      <div class="feature-pill"><i class="fa-solid fa-ban"></i> Ban System</div>
+    <div class="btn-group">
+      <a href="login.html" id="btn-get-started" class="btn btn-primary">Get Started</a>
+      <a href="login.html" id="btn-dashboard"   class="btn btn-secondary">View Dashboard</a>
     </div>
- 
-    <div class="scroll-hint">
-      <div class="line"></div>
-      <span>scroll</span>
-    </div>
-  </section>
- 
-  <div class="sep"></div>
- 
-  <section class="page-section" id="features">
-    <div class="section-tag">What We Offer</div>
-    <h2 class="section-title">Powerful <span>Features</span></h2>
-    <p class="section-sub">Everything you need to protect your software and manage your users — all in one place.</p>
-    <div class="features-grid">
-      <div class="feat-card"><div class="feat-icon"><i class="fa-solid fa-key"></i></div><h3>Key Generation</h3><p>Generate unique, cryptographically secure license keys with custom formats, prefixes, and expiry durations in seconds.</p></div>
-      <div class="feat-card"><div class="feat-icon"><i class="fa-solid fa-fingerprint"></i></div><h3>HWID Binding</h3><p>Lock each license to a specific hardware ID to prevent key sharing and unauthorized use across multiple machines.</p></div>
-      <div class="feat-card"><div class="feat-icon"><i class="fa-solid fa-user-shield"></i></div><h3>User Management</h3><p>Full control over your user base — create, update, suspend, or permanently ban users from a clean dashboard interface.</p></div>
-      <div class="feat-card"><div class="feat-icon"><i class="fa-solid fa-clock"></i></div><h3>Expiry Control</h3><p>Set flexible expiry dates — hourly, daily, monthly or lifetime. Pause and resume licenses without losing time.</p></div>
-      <div class="feat-card"><div class="feat-icon"><i class="fa-solid fa-code"></i></div><h3>REST API</h3><p>Integrate Auth.cs into any application with our clean, documented REST API. Supports C#, Python, Node.js and more.</p></div>
-      <div class="feat-card"><div class="feat-icon"><i class="fa-solid fa-ban"></i></div><h3>Ban System</h3><p>Instantly revoke access to banned users or keys. Block by HWID, IP address, or username with a single click.</p></div>
-    </div>
-  </section>
- 
-  <div class="sep"></div>
- 
-  <section class="page-section" id="pricing">
-    <div class="section-tag">Plans</div>
-    <h2 class="section-title">Auth.cs <span>Pricing</span></h2>
-    <p class="section-sub">No hidden fees. Pick the plan that fits your project and scale as you grow.</p>
-    <div class="pricing-grid">
-      <div class="price-card"><div class="plan-name">Starter</div><div class="plan-price"><sup>$</sup>0</div><div class="plan-period">Forever free</div><ul class="plan-features"><li><i class="fa-solid fa-check"></i> Up to 50 licenses</li><li><i class="fa-solid fa-check"></i> Basic key generation</li><li><i class="fa-solid fa-check"></i> HWID binding</li><li><i class="fa-solid fa-check"></i> REST API access</li><li class="off"><i class="fa-solid fa-xmark"></i> Priority support</li><li class="off"><i class="fa-solid fa-xmark"></i> Custom domains</li><li class="off"><i class="fa-solid fa-xmark"></i> Advanced analytics</li></ul><a href="https://discord.gg/RUeV9g55zU" target="_blank" class="plan-btn">Get Started Free</a></div>
-      <div class="price-card popular"><div class="popular-badge">Most Popular</div><div class="plan-name">Pro</div><div class="plan-price"><sup>$</sup>9</div><div class="plan-period">per month</div><ul class="plan-features"><li><i class="fa-solid fa-check"></i> Unlimited licenses</li><li><i class="fa-solid fa-check"></i> Advanced key generation</li><li><i class="fa-solid fa-check"></i> HWID binding</li><li><i class="fa-solid fa-check"></i> Full REST API access</li><li><i class="fa-solid fa-check"></i> Priority support</li><li><i class="fa-solid fa-check"></i> Custom domains</li><li class="off"><i class="fa-solid fa-xmark"></i> Advanced analytics</li></ul><a href="https://discord.gg/RUeV9g55zU" target="_blank" class="plan-btn">Get Pro</a></div>
-      <div class="price-card"><div class="plan-name">Enterprise</div><div class="plan-price"><sup>$</sup>29</div><div class="plan-period">per month</div><ul class="plan-features"><li><i class="fa-solid fa-check"></i> Unlimited licenses</li><li><i class="fa-solid fa-check"></i> Advanced key generation</li><li><i class="fa-solid fa-check"></i> HWID binding</li><li><i class="fa-solid fa-check"></i> Full REST API access</li><li><i class="fa-solid fa-check"></i> Priority support</li><li><i class="fa-solid fa-check"></i> Custom domains</li><li><i class="fa-solid fa-check"></i> Advanced analytics</li></ul><a href="https://discord.gg/RUeV9g55zU" target="_blank" class="plan-btn">Contact Us</a></div>
-    </div>
-  </section>
- 
-  <div class="sep"></div>
- 
-  <section class="page-section" id="contact">
-    <div class="section-tag">Get In Touch</div>
-    <h2 class="section-title">Join Our <span>Community</span></h2>
-    <p class="section-sub">Have questions, need support, or want to get started? Join our Discord and we'll help you out.</p>
-    <div class="contact-inner">
-      <div class="contact-left"><div class="contact-info"><div class="contact-item"><div class="contact-item-icon"><i class="fa-brands fa-discord"></i></div><div><h4>Discord Server</h4><p>Our main support hub. Get help, report issues, and stay updated on new features instantly.</p></div></div><div class="contact-item"><div class="contact-item-icon"><i class="fa-solid fa-bolt"></i></div><div><h4>Fast Response</h4><p>We typically respond within a few hours. Pro &amp; Enterprise users get priority support channels.</p></div></div><div class="contact-item"><div class="contact-item-icon"><i class="fa-solid fa-book"></i></div><div><h4>Documentation</h4><p>Full API docs, integration guides, and code examples available in the Discord server resources.</p></div></div></div></div>
-      <div class="contact-right"><div class="discord-card"><div class="discord-logo"><i class="fa-brands fa-discord"></i></div><h3>Auth.cs Discord</h3><p>Join our server to get support, access documentation, and connect with other developers using Auth.cs.</p><a href="https://discord.gg/RUeV9g55zU" target="_blank" class="discord-btn"><i class="fa-brands fa-discord"></i> Join Server</a><div class="discord-members"><span class="dot"></span> Server is active &amp; online</div></div></div>
-    </div>
-  </section>
- 
-  <footer>
-    <a href="#home" class="logo">Auth.cs</a>
-    <p>© 2026 Auth.cs. All rights reserved.</p>
-    <div class="social-icons" style="margin:0;">
-      <a href="https://discord.gg/RUeV9g55zU" target="_blank" title="Discord"><i class="fa-brands fa-discord"></i></a>
-      <a href="https://instagram.com/YOUR_HANDLE" target="_blank" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
-      <a href="https://github.com/YOUR_HANDLE" target="_blank" title="GitHub"><i class="fa-brands fa-github"></i></a>
-      <a href="https://x.com/YOUR_HANDLE" target="_blank" title="Twitter / X"><i class="fa-brands fa-x-twitter"></i></a>
-    </div>
-  </footer>
- 
-  <script>
-    // ========================
-    // ANTI-INSPECTION & ANTI-TAMPER (unchanged)
-    // ========================
-    (function antiTamper() {
-        document.addEventListener('contextmenu', function(e) { e.preventDefault(); return false; });
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'F12' || e.keyCode === 123) { e.preventDefault(); return false; }
-            if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C' || e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) { e.preventDefault(); return false; }
-            if ((e.ctrlKey || e.metaKey) && (e.key === 'u' || e.key === 'U' || e.keyCode === 85)) { e.preventDefault(); return false; }
-            if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S' || e.keyCode === 83)) { e.preventDefault(); return false; }
-            if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'R' || e.keyCode === 82)) { e.preventDefault(); return false; }
-        });
-        let devToolsOpen = false;
-        const element = new Image();
-        Object.defineProperty(element, 'id', { get: function() { devToolsOpen = true; throw new Error('DevTools detected'); } });
-        setInterval(() => {
-            try { console.log('%c', element); console.clear(); if (devToolsOpen) devToolsOpen = false; } catch (e) {}
-        }, 1000);
-        const noop = () => {};
-        if (window.console) {
-            const originalError = console.error;
-            console.error = function() { if (arguments[0] && typeof arguments[0] === 'string' && arguments[0].includes('DevTools')) return; originalError.apply(console, arguments); };
-            console.warn = noop;
+  </div>
+  <div class="features-strip">
+    <div class="feature-pill"><i class="fa-solid fa-key"></i> Key Generation</div>
+    <div class="feature-pill"><i class="fa-solid fa-user-shield"></i> User Management</div>
+    <div class="feature-pill"><i class="fa-solid fa-fingerprint"></i> HWID Binding</div>
+    <div class="feature-pill"><i class="fa-solid fa-clock"></i> Expiry Control</div>
+    <div class="feature-pill"><i class="fa-solid fa-ban"></i> Ban System</div>
+  </div>
+  <div class="scroll-hint"><div class="line"></div><span>scroll</span></div>
+</section>
+
+<div class="sep"></div>
+
+<section class="page-section" id="features">
+  <div class="section-tag">What We Offer</div>
+  <h2 class="section-title">Powerful <span>Features</span></h2>
+  <p class="section-sub">Everything you need to protect your software and manage your users.</p>
+  <div class="features-grid">
+    <div class="feat-card"><div class="feat-icon"><i class="fa-solid fa-key"></i></div><h3>Key Generation</h3><p>Generate unique, cryptographically secure license keys with custom formats and expiry durations.</p></div>
+    <div class="feat-card"><div class="feat-icon"><i class="fa-solid fa-fingerprint"></i></div><h3>HWID Binding</h3><p>Lock each license to a specific hardware ID to prevent key sharing across multiple machines.</p></div>
+    <div class="feat-card"><div class="feat-icon"><i class="fa-solid fa-user-shield"></i></div><h3>User Management</h3><p>Full control over your user base — create, update, suspend, or permanently ban users.</p></div>
+    <div class="feat-card"><div class="feat-icon"><i class="fa-solid fa-clock"></i></div><h3>Expiry Control</h3><p>Set flexible expiry dates — hourly, daily, monthly or lifetime.</p></div>
+    <div class="feat-card"><div class="feat-icon"><i class="fa-solid fa-code"></i></div><h3>REST API</h3><p>Integrate Auth.cs into any application with our clean, documented REST API.</p></div>
+    <div class="feat-card"><div class="feat-icon"><i class="fa-solid fa-ban"></i></div><h3>Ban System</h3><p>Instantly revoke access to banned users with a single click.</p></div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<section class="page-section" id="pricing">
+  <div class="section-tag">Plans</div>
+  <h2 class="section-title">Auth.cs <span>Pricing</span></h2>
+  <p class="section-sub">No hidden fees. Pick the plan that fits your project.</p>
+  <div class="pricing-grid">
+    <div class="price-card"><div class="plan-name">Starter</div><div class="plan-price"><sup>$</sup>0</div><div class="plan-period">Forever free</div><ul class="plan-features"><li><i class="fa-solid fa-check"></i>Up to 50 licenses</li><li><i class="fa-solid fa-check"></i>Basic key generation</li><li><i class="fa-solid fa-check"></i>HWID binding</li><li><i class="fa-solid fa-check"></i>REST API access</li><li class="off"><i class="fa-solid fa-xmark"></i>Priority support</li><li class="off"><i class="fa-solid fa-xmark"></i>Custom domains</li></ul><a href="https://discord.gg/RUeV9g55zU" target="_blank" class="plan-btn">Get Started Free</a></div>
+    <div class="price-card popular"><div class="popular-badge">Most Popular</div><div class="plan-name">Pro</div><div class="plan-price"><sup>$</sup>9</div><div class="plan-period">per month</div><ul class="plan-features"><li><i class="fa-solid fa-check"></i>Unlimited licenses</li><li><i class="fa-solid fa-check"></i>Advanced key generation</li><li><i class="fa-solid fa-check"></i>HWID binding</li><li><i class="fa-solid fa-check"></i>Full REST API access</li><li><i class="fa-solid fa-check"></i>Priority support</li><li><i class="fa-solid fa-check"></i>Custom domains</li></ul><a href="https://discord.gg/RUeV9g55zU" target="_blank" class="plan-btn">Get Pro</a></div>
+    <div class="price-card"><div class="plan-name">Enterprise</div><div class="plan-price"><sup>$</sup>29</div><div class="plan-period">per month</div><ul class="plan-features"><li><i class="fa-solid fa-check"></i>Unlimited licenses</li><li><i class="fa-solid fa-check"></i>Advanced key generation</li><li><i class="fa-solid fa-check"></i>HWID binding</li><li><i class="fa-solid fa-check"></i>Full REST API + analytics</li><li><i class="fa-solid fa-check"></i>Priority support</li><li><i class="fa-solid fa-check"></i>Custom domains</li></ul><a href="https://discord.gg/RUeV9g55zU" target="_blank" class="plan-btn">Contact Us</a></div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<section class="page-section" id="contact">
+  <div class="section-tag">Get In Touch</div>
+  <h2 class="section-title">Join Our <span>Community</span></h2>
+  <p class="section-sub">Have questions or need support? Join our Discord.</p>
+  <div class="contact-inner">
+    <div class="contact-left"><div class="contact-info">
+      <div class="contact-item"><div class="contact-item-icon"><i class="fa-brands fa-discord"></i></div><div><h4>Discord Server</h4><p>Our main support hub. Get help and stay updated on new features.</p></div></div>
+      <div class="contact-item"><div class="contact-item-icon"><i class="fa-solid fa-bolt"></i></div><div><h4>Fast Response</h4><p>We typically respond within a few hours.</p></div></div>
+      <div class="contact-item"><div class="contact-item-icon"><i class="fa-solid fa-book"></i></div><div><h4>Documentation</h4><p>Full API docs and integration guides available in Discord.</p></div></div>
+    </div></div>
+    <div class="contact-right"><div class="discord-card">
+      <div class="discord-logo"><i class="fa-brands fa-discord"></i></div>
+      <h3>Auth.cs Discord</h3>
+      <p>Join our server to get support, access documentation, and connect with other developers.</p>
+      <a href="https://discord.gg/RUeV9g55zU" target="_blank" class="discord-btn"><i class="fa-brands fa-discord"></i> Join Server</a>
+    </div></div>
+  </div>
+</section>
+
+<footer>
+  <a href="#home" class="logo">Auth.cs</a>
+  <p>© 2026 Auth.cs. All rights reserved.</p>
+  <div class="social-icons" style="margin:0">
+    <a href="https://discord.gg/RUeV9g55zU" target="_blank"><i class="fa-brands fa-discord"></i></a>
+    <a href="#"><i class="fa-brands fa-github"></i></a>
+  </div>
+</footer>
+
+<script>
+  // ── Session-aware buttons: go dashboard if logged in, else login ──
+  (function(){
+    try {
+      const s = localStorage.getItem('authcs_session');
+      if(s){
+        const d = JSON.parse(s);
+        if(d.expiry && Date.now() < d.expiry){
+          document.getElementById('btn-get-started').href = 'dashboard.html';
+          document.getElementById('btn-dashboard').href   = 'dashboard.html';
+          return;
         }
-        document.addEventListener('selectstart', function(e) { e.preventDefault(); return false; });
-        document.addEventListener('dragstart', function(e) { e.preventDefault(); return false; });
-        document.addEventListener('copy', function(e) { e.preventDefault(); return false; });
-        document.addEventListener('cut', function(e) { e.preventDefault(); return false; });
-        let threshold = 160;
-        setInterval(() => {
-            if (window.outerHeight - window.innerHeight > threshold || window.outerWidth - window.innerWidth > threshold) {
-                document.body.innerHTML = '<div style="background:#0a0a0a;color:#e8001e;display:flex;align-items:center;justify-content:center;height:100vh;font-family:monospace;text-align:center;"><div><h1>🔒 Access Denied</h1><p>Developer tools are not allowed on this page.</p></div></div>';
-                setTimeout(() => window.location.reload(), 2000);
-            }
-        }, 500);
-        window.addEventListener('keydown', function(e) { if (e.key === 'Menu' || e.keyCode === 93) { e.preventDefault(); return false; } });
-        window.debugger = function() { return; };
-        const originalToString = Function.prototype.toString;
-        Function.prototype.toString = function() {
-            if (this === Function || this === eval || this === window.constructor) return 'function () { [native code] }';
-            return originalToString.call(this);
-        };
-        setInterval(() => { try { debugger; } catch (er) {} }, 300);
-        if (window.console) { console.profile = noop; console.profileEnd = noop; console.table = noop; }
-    })();
- 
-    // ========================
-    // SESSION-AWARE BUTTONS: both go to dashboard if logged in, else login
-    // ========================
-    (function fixButtons() {
-        const session = localStorage.getItem('authcs_session');
-        let isLoggedIn = false;
-        if (session) {
-            try {
-                const data = JSON.parse(session);
-                if (data.expiry && Date.now() < data.expiry) {
-                    isLoggedIn = true;
-                } else {
-                    localStorage.removeItem('authcs_session');
-                    localStorage.removeItem('authcs_login_time');
-                }
-            } catch(e) {}
-        }
-        const targetUrl = isLoggedIn ? 'dashboard.html' : 'login.html';
-        const btnGetStarted = document.getElementById('btn-get-started');
-        const btnDashboard = document.getElementById('btn-dashboard');
-        if (btnGetStarted) btnGetStarted.href = targetUrl;
-        if (btnDashboard) btnDashboard.href = targetUrl;
-    })();
- 
-    // ── CUSTOM CURSOR ──
-    const dot  = document.getElementById('cursor-dot');
-    const ring = document.getElementById('cursor-ring');
-    let mx = -200, my = -200, rx = -200, ry = -200;
-    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
-    (function animate() {
-      dot.style.left = mx + 'px'; dot.style.top = my + 'px';
-      rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12;
-      ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
-      requestAnimationFrame(animate);
-    })();
-    document.querySelectorAll('a, button, .feat-card, .price-card, .contact-item').forEach(el => {
-      el.addEventListener('mouseenter', () => { dot.classList.add('hovered'); ring.classList.add('hovered'); });
-      el.addEventListener('mouseleave', () => { dot.classList.remove('hovered'); ring.classList.remove('hovered'); });
-    });
- 
-    // ── STICKY HEADER + LOGO SLIDE-DOWN ON SCROLL ──
-    const siteHeader = document.getElementById('site-header');
-    const SCROLL_THRESHOLD = 80;
-    function onScroll() {
-      if (window.scrollY > SCROLL_THRESHOLD) siteHeader.classList.add('scrolled');
-      else siteHeader.classList.remove('scrolled');
-    }
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
- 
-    // ── TYPING ANIMATION ──
-    const words = ['Licensing', 'Key Generation', 'User Auth', 'HWID Locks', 'App Security'];
-    let wi = 0, ci = 0, deleting = false;
-    const typedEl = document.getElementById('typed');
-    function type() {
-      const word = words[wi];
-      if (!deleting) {
-        typedEl.textContent = word.slice(0, ++ci);
-        if (ci === word.length) { deleting = true; setTimeout(type, 1400); return; }
-      } else {
-        typedEl.textContent = word.slice(0, --ci);
-        if (ci === 0) { deleting = false; wi = (wi + 1) % words.length; }
+        localStorage.removeItem('authcs_session');
       }
-      setTimeout(type, deleting ? 60 : 100);
-    }
-    type();
- 
-    // ── NAV ACTIVE ON SCROLL ──
-    const sections = document.querySelectorAll('section[id]');
-    const navLinks = document.querySelectorAll('nav a');
-    window.addEventListener('scroll', () => {
-      let current = '';
-      sections.forEach(s => { if (window.scrollY >= s.offsetTop - 200) current = s.getAttribute('id'); });
-      navLinks.forEach(a => {
-        a.classList.remove('active');
-        if (a.getAttribute('href') === '#' + current) a.classList.add('active');
-      });
-    }, { passive: true });
-    navLinks.forEach(a => {
-      a.addEventListener('click', () => {
-        navLinks.forEach(x => x.classList.remove('active'));
-        a.classList.add('active');
-      });
-    });
-  </script>
+    } catch(e){}
+    document.getElementById('btn-get-started').href = 'login.html';
+    document.getElementById('btn-dashboard').href   = 'login.html';
+  })();
+
+  // ── Cursor ──
+  const dot=document.getElementById('cursor-dot'),ring=document.getElementById('cursor-ring');
+  let mx=-200,my=-200,rx=-200,ry=-200;
+  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+  (function animate(){dot.style.left=mx+'px';dot.style.top=my+'px';rx+=(mx-rx)*0.12;ry+=(my-ry)*0.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(animate);})();
+  document.querySelectorAll('a,button,.feat-card,.price-card').forEach(el=>{
+    el.addEventListener('mouseenter',()=>{dot.classList.add('hovered');ring.classList.add('hovered');});
+    el.addEventListener('mouseleave',()=>{dot.classList.remove('hovered');ring.classList.remove('hovered');});
+  });
+
+  // ── Sticky header ──
+  const hdr=document.getElementById('site-header');
+  window.addEventListener('scroll',()=>{hdr.classList.toggle('scrolled',window.scrollY>80);},{passive:true});
+
+  // ── Typing animation ──
+  const words=['Licensing','Key Generation','User Auth','HWID Locks','App Security'];
+  let wi=0,ci=0,del=false;
+  const tEl=document.getElementById('typed');
+  function type(){
+    const w=words[wi];
+    if(!del){tEl.textContent=w.slice(0,++ci);if(ci===w.length){del=true;setTimeout(type,1400);return;}}
+    else{tEl.textContent=w.slice(0,--ci);if(ci===0){del=false;wi=(wi+1)%words.length;}}
+    setTimeout(type,del?60:100);
+  }
+  type();
+
+  // ── Nav active on scroll ──
+  const secs=document.querySelectorAll('section[id]');
+  const navs=document.querySelectorAll('nav a');
+  window.addEventListener('scroll',()=>{
+    let cur='';
+    secs.forEach(s=>{if(window.scrollY>=s.offsetTop-200)cur=s.id;});
+    navs.forEach(a=>{a.classList.toggle('active',a.getAttribute('href')==='#'+cur);});
+  },{passive:true});
+</script>
 </body>
 </html>
