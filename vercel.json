@@ -1,6 +1,16 @@
 {
   "rewrites": [
-    { "source": "/api/proxy", "destination": "/api/proxy.js" },
-    { "source": "/api/login", "destination": "/api/login.js" }
+    {
+      "source": "/api/proxy/:path*",
+      "destination": "/api/proxy.js"
+    },
+    {
+      "source": "/api/proxy",
+      "destination": "/api/proxy.js"
+    },
+    {
+      "source": "/api/login",
+      "destination": "/api/login.js"
+    }
   ]
 }
